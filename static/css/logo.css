@@ -1,0 +1,90 @@
+/* 主题图标基础样式 */
+.zay-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--primary-color, #0d6efd);
+  }
+  
+  /* 大小变体 */
+  .zay-icon-sm { font-size: 0.875rem; }
+  .zay-icon-md { font-size: 1.25rem; }
+  .zay-icon-lg { font-size: 1.5rem; }
+  .zay-icon-xl { font-size: 2rem; }
+  
+  /* 圆形按钮图标 */
+  .zay-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .zay-icon-btn:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.2);
+    transform: translateY(-2px);
+  }
+  
+  /* 文件类型图标样式 */
+  .file-icon {
+    padding: 8px;
+    border-radius: 8px;
+    margin-right: 10px;
+    background-color: rgba(var(--bs-secondary-rgb), 0.1);
+  }
+  
+  /* 文件类型特定颜色 */
+  .file-icon-video { color: #ff4757; background-color: rgba(255, 71, 87, 0.1); }
+  .file-icon-audio { color: #2ed573; background-color: rgba(46, 213, 115, 0.1); }
+  .file-icon-image { color: #1e90ff; background-color: rgba(30, 144, 255, 0.1); }
+  .file-icon-document { color: #5352ed; background-color: rgba(83, 82, 237, 0.1); }
+  .file-icon-archive { color: #ffa502; background-color: rgba(255, 165, 2, 0.1); }
+  .file-icon-code { color: #a55eea; background-color: rgba(165, 94, 234, 0.1); }
+  .file-icon-folder { color: #ff9f43; background-color: rgba(255, 159, 67, 0.1); }
+  
+  /* 悬停动画效果 */
+  .zay-icon-animated:hover {
+    animation: pulse 0.5s ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /* 操作按钮图标样式 */
+.action-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-primary);
+  }
+  
+  .action-icon:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(var(--bs-primary-rgb), 0.3);
+  }
+  
+  /* 操作类型特定样式 */
+  .action-icon-edit { background-color: rgba(var(--bs-warning-rgb), 0.08); color: var(--bs-warning); }
+  .action-icon-edit:hover { background-color: var(--bs-warning); color: white; }
+  
+  .action-icon-delete { background-color: rgba(var(--bs-danger-rgb), 0.08); color: var(--bs-danger); }
+  .action-icon-delete:hover { background-color: var(--bs-danger); color: white; }
+  
+  .action-icon-download { background-color: rgba(var(--bs-success-rgb), 0.08); color: var(--bs-success); }
+  .action-icon-download:hover { background-color: var(--bs-success); color: white; }

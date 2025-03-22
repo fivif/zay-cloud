@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAY - {{ file_name }}</title>
+    <link href="../../../static/css/te1.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/wavesurfer.js@6/dist/wavesurfer.js"></script>
+    <link rel="stylesheet" href="../static/css/music.css">
+    <link rel="icon" href="../static/logo/zay.png" type="image/png">
+</head>
+<body>
+    <div class="main-container">
+        <div class="player-container">
+            <h3 class="mb-3">
+                <i class="fas fa-music file-icon"></i>
+                {{ file_name }}
+            </h3>
+            
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>加载媒体中，请稍候...</p>
+            </div>
+            
+            <div class="player-wrapper mb-4 position-relative">
+                <!-- 波形显示区域 -->
+                <div id="waveform"></div>
+                <div class="audio-info" id="audioInfo"></div>
+                
+                <!-- 音频控制器 -->
+                <div class="audio-controls">
+                    <button class="audio-control-btn" id="prevBtn" title="上一曲">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button class="audio-control-btn" id="playBtn" title="播放/暂停">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="audio-control-btn" id="nextBtn" title="下一曲">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                    <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
+                    
+                    <div class="volume-control">
+                        <i class="fas fa-volume-up" style="margin-right: 8px;"></i>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="0.7">
+                    </div>
+                    
+                    <button class="audio-control-btn" id="playbackRateBtn" title="播放速度">
+                        1.0x
+                    </button>
+                </div>
+                
+                <!-- 频谱分析器 -->
+                <canvas id="frequency-analyzer"></canvas>
+            </div>
+            
+            <div class="controls">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> 返回首页
+                </a>
+                <a href="/download/{{ file_path }}" class="btn btn-success">
+                    <i class="fas fa-download"></i> 下载文件
+                </a>
+                <button id="copyLinkBtn" class="btn btn-info" onclick="generateAndCopyLink()">
+                    <i class="fas fa-link"></i> 复制链接
+                </button>
+                <button id="loopBtn" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> 循环播放: 关
+                </button>
+                <button id="randomBtn" class="btn btn-secondary">
+                    <i class="fas fa-random"></i> 随机播放: 关
+                </button>
+                <button id="externalPlayerBtn" class="btn btn-warning">
+                    <i class="fas fa-external-link-alt"></i> 使用外部播放器
+                </button>
+            </div>
+        </div>
+        
+        <div class="playlist-container">
+            <div class="playlist-title">
+                <i class="fas fa-list"></i> 当前文件夹
+            </div>
+            <div id="playlistItems">
+                <div class="no-files-message">加载中...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 显示加载指示器
+        document.getElementById('loadingIndicator').style.display = 'block';
+        
+        // 全局变量
+        let wavesurfer = null;
+        let analyserContext = null;
+        let analyserNode = null;
+        let audioContext = null;
+        let canvasContext = null;
+        const currentFilePath = "{{ file_path }}";
+        const folderPath = currentFilePath.substring(0, currentFilePath.lastIndexOf('/'));
+        let currentPlayingIndex = -1;
+        let playbackRates = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+        let currentRateIndex = 2; // 默认1.0x
+        let isLooping = false;
+        let isRandom = false;
+        let playlist = [];
+        
+        // 初始化播放器
+        document.addEventListener('DOMContentLoaded', function() {
+            initWavesurfer();
+            loadPlaylist();
+            initControls();
+            loadBackgroundSettings();
+        });
+        
+        // 初始化 WaveSurfer
+        function initWavesurfer() {
+            wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            waveColor: '#4F9DF9',
+            progressColor: '#0D47A1',
+            cursorColor: '#FF5722',
+            barWidth: 2,
+            barRadius: 3,
+            cursorWidth: 2,
+            height: 128,
+            barGap: 2,
+            responsive: true,
+            normalize: true,
+            pixelRatio: 1,
+            backend: 'WebAudio',
+            plugins: [],
+            minPxPerSec: 50, // 增加最小像素/秒，提高精度
+            partialRender: true, // 启用部分渲染以提高性能
+            fetchStrategy: 'arraybuffer' // 使用 arraybuffer 而不是 fetch API
+        });
+            
+            // 加载音频
+            wavesurfer.load('/view/{{ file_path }}');
+            
+            // 播放器事件
+            wavesurfer.on('ready', function() {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('playBtn').innerHTML = '<i class="fas fa-play"></i>';
+                updateTimeDisplay();
+                initAudioAnalyser();
+            });
+            
+            wavesurfer.on('play', function() {
+                document.getElementById('playBtn').innerHTML = '<i class="fas fa-pause"></i>';
+                requestAnimationFrame(updateFrequencyAnalyzer);
+            });
+            
+            wavesurfer.on('pause', function() {
+                document.getElementById('playBtn').innerHTML = '<i class="fas fa-play"></i>';
+            });
+            
+            wavesurfer.on('audioprocess', function() {
+                updateTimeDisplay();
+            });
+            
+            wavesurfer.on('finish', function() {
+                document.getElementById('playBtn').innerHTML = '<i class="fas fa-play"></i>';
+                
+                if (isLooping) {
+                    wavesurfer.play(0);
+                    return;
+                }
+                
+                // 播放下一首
+                playNextTrack();
+            });
+            
+            wavesurfer.on('error', function(err) {
+                console.error('WaveSurfer 错误:', err);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                alert('加载音频失败: ' + err);
+            });
+        }
+        
+        // 初始化控制按钮
+        function initControls() {
+            // 播放/暂停按钮
+            document.getElementById('playBtn').addEventListener('click', function() {
+                wavesurfer.playPause();
+            });
+            
+            // 上一曲按钮
+            document.getElementById('prevBtn').addEventListener('click', function() {
+                playPreviousTrack();
+            });
+            
+            // 下一曲按钮
+            document.getElementById('nextBtn').addEventListener('click', function() {
+                playNextTrack();
+            });
+            
+            // 音量滑块
+            document.getElementById('volumeSlider').addEventListener('input', function() {
+                wavesurfer.setVolume(this.value);
+            });
+            
+            // 播放速度按钮
+            document.getElementById('playbackRateBtn').addEventListener('click', function() {
+                currentRateIndex = (currentRateIndex + 1) % playbackRates.length;
+                const newRate = playbackRates[currentRateIndex];
+                wavesurfer.setPlaybackRate(newRate);
+                this.textContent = newRate + 'x';
+            });
+            
+            // 循环播放按钮
+            document.getElementById('loopBtn').addEventListener('click', function() {
+                isLooping = !isLooping;
+                this.innerHTML = `<i class="fas fa-redo"></i> 循环播放: ${isLooping ? '开' : '关'}`;
+            });
+            
+            // 随机播放按钮
+            document.getElementById('randomBtn').addEventListener('click', function() {
+                isRandom = !isRandom;
+                this.innerHTML = `<i class="fas fa-random"></i> 随机播放: ${isRandom ? '开' : '关'}`;
+            });
+            
+            // 外部播放器按钮
+            document.getElementById('externalPlayerBtn').addEventListener('click', function() {
+                openInExternalPlayer();
+            });
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                // 空格键播放/暂停
+                if (e.key === ' ' && !e.target.matches('input, textarea, button')) {
+                    e.preventDefault();
+                    wavesurfer.playPause();
+                }
+                // 左右箭头快进快退5秒
+                else if (e.key === 'ArrowRight') {
+                    wavesurfer.skip(5);
+                } 
+                else if (e.key === 'ArrowLeft') {
+                    wavesurfer.skip(-5);
+                }
+                // 上下箭头调整音量
+                else if (e.key === 'ArrowUp') {
+                    const volume = Math.min(1, wavesurfer.getVolume() + 0.1);
+                    wavesurfer.setVolume(volume);
+                    document.getElementById('volumeSlider').value = volume;
+                } 
+                else if (e.key === 'ArrowDown') {
+                    const volume = Math.max(0, wavesurfer.getVolume() - 0.1);
+                    wavesurfer.setVolume(volume);
+                    document.getElementById('volumeSlider').value = volume;
+                }
+            });
+        }
+        
+        // 更新时间显示
+        function updateTimeDisplay() {
+            const currentTime = wavesurfer.getCurrentTime();
+            const duration = wavesurfer.getDuration();
+            
+            document.getElementById('timeDisplay').textContent = 
+                formatTime(currentTime) + ' / ' + formatTime(duration);
+                
+            // 更新音频信息
+            const audioInfo = document.getElementById('audioInfo');
+            if (wavesurfer.backend && wavesurfer.backend.buffer) {
+                const sampleRate = wavesurfer.backend.buffer.sampleRate;
+                const channels = wavesurfer.backend.buffer.numberOfChannels;
+                audioInfo.textContent = `${channels}声道 | ${sampleRate}Hz | ${formatTime(duration)}`;
+            }
+        }
+        
+        // 格式化时间
+        function formatTime(seconds) {
+            seconds = Math.floor(seconds);
+            const minutes = Math.floor(seconds / 60);
+            seconds = seconds % 60;
+            return minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+        }
+        
+        // 初始化音频分析器
+        function initAudioAnalyser() {
+            // 获取WaveSurfer的音频上下文
+            audioContext = wavesurfer.backend.ac;
+            
+            // 创建分析节点
+            analyserNode = audioContext.createAnalyser();
+            analyserNode.fftSize = 256;
+            analyserNode.smoothingTimeConstant = 0.7;
+            
+            // 连接分析节点
+            wavesurfer.backend.gainNode.connect(analyserNode);
+            analyserNode.connect(audioContext.destination);
+            
+            // 获取Canvas上下文
+            const canvas = document.getElementById('frequency-analyzer');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            canvasContext = canvas.getContext('2d');
+        }
+        
+        // 更新频谱分析器
+        function updateFrequencyAnalyzer() {
+            if (!wavesurfer.isPlaying() || !analyserNode || !canvasContext) return;
+            
+            // 获取频率数据
+            const bufferLength = analyserNode.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserNode.getByteFrequencyData(dataArray);
+            
+            // 清空画布
+            canvasContext.clearRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+            
+            // 绘制频谱
+            const barWidth = canvasContext.canvas.width / bufferLength * 2.5;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = (dataArray[i] / 255) * canvasContext.canvas.height;
+                
+                // 创建渐变色
+                const hue = (i / bufferLength) * 360;
+                canvasContext.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                
+                canvasContext.fillRect(
+                    x, 
+                    canvasContext.canvas.height - barHeight, 
+                    barWidth, 
+                    barHeight
+                );
+                
+                x += barWidth + 1;
+            }
+            
+            requestAnimationFrame(updateFrequencyAnalyzer);
+        }
+        
+        // 加载播放列表
+        async function loadPlaylist() {
+            try {
+                const response = await fetch(`/api/files?path=${encodeURIComponent(folderPath)}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || "获取文件列表失败");
+                }
+                
+                const playlistContainer = document.getElementById('playlistItems');
+                
+                // 获取音频文件
+                const audioFiles = [];
+                
+                // 添加音频文件
+                if (data.categories && data.categories.audios) {
+                    audioFiles.push(...data.categories.audios);
+                }
+                
+                if (audioFiles.length === 0) {
+                    playlistContainer.innerHTML = '<div class="no-files-message">没有找到其他音频文件</div>';
+                    return;
+                }
+                
+                // 保存播放列表
+                playlist = audioFiles;
+                
+                // 构建播放列表HTML
+                let playlistHTML = '';
+                
+                audioFiles.forEach((file, index) => {
+                    const isCurrentFile = (folderPath + '/' + file.name) === currentFilePath;
+                    if (isCurrentFile) {
+                        currentPlayingIndex = index;
+                    }
+                    
+                    playlistHTML += `
+                        <div class="playlist-item ${isCurrentFile ? 'active' : ''}" 
+                             data-path="${folderPath}/${file.name}" 
+                             data-index="${index}">
+                            <div class="playlist-item-icon">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="playlist-item-name">${file.name}</div>
+                        </div>
+                    `;
+                });
+                
+                playlistContainer.innerHTML = playlistHTML;
+                
+                // 添加点击事件
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const path = this.getAttribute('data-path');
+                        const index = parseInt(this.getAttribute('data-index'));
+                        if (path !== currentFilePath) {
+                            window.location.href = `/play${encodeURIComponent(path)}`;
+                        }
+                    });
+                });
+                
+            } catch (error) {
+                console.error('加载播放列表失败:', error);
+                document.getElementById('playlistItems').innerHTML = 
+                    `<div class="no-files-message">加载文件列表失败: ${error.message}</div>`;
+            }
+        }
+        
+       // 播放下一曲 - 改进版
+       function playNextTrack() {
+            if (!playlist || playlist.length <= 1) return;
+            
+            let nextIndex;
+            
+            if (isRandom) {
+                // 随机模式：随机选择一个不同的索引
+                do {
+                    nextIndex = Math.floor(Math.random() * playlist.length);
+                } while (nextIndex === currentPlayingIndex && playlist.length > 1);
+            } else {
+                // 顺序模式：选择下一个索引
+                nextIndex = (currentPlayingIndex + 1) % playlist.length;
+            }
+            
+            const nextFile = playlist[nextIndex];
+            const nextPath = folderPath + '/' + nextFile.name;
+            
+            // 不刷新页面，直接加载新音频
+            currentPlayingIndex = nextIndex;
+            loadAudioFile(nextPath);
+            
+            // 更新URL（可选，不会刷新页面）
+            const newUrl = `/play${encodeURIComponent(nextPath)}`;
+            history.pushState(null, '', newUrl);
+            document.title = `ZAY - ${nextFile.name}`;
+        }
+        // 加载新的音频文件
+        function loadAudioFile(path) {
+            // 显示加载指示器
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            // 停止当前播放
+            if (wavesurfer.isPlaying()) {
+                wavesurfer.pause();
+            }
+            
+            // 清除当前波形
+            wavesurfer.empty();
+            
+            // 分离部分文件路径以获取文件名
+            const fileName = path.split('/').pop();
+            
+            // 更新标题
+            document.title = `ZAY - ${fileName}`;
+            const pageTitle = document.querySelector('h3');
+            if (pageTitle) {
+                pageTitle.innerHTML = `<i class="fas fa-music file-icon"></i> ${fileName}`;
+            }
+            
+            // 加载新音频
+            wavesurfer.load(`/view${path}`);
+            
+            // 更新播放列表中的活动项
+            document.querySelectorAll('.playlist-item').forEach(item => {
+                if (item.getAttribute('data-path') === path) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // 设置加载完成事件
+            wavesurfer.once('ready', function() {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                // 自动开始播放
+                wavesurfer.play();
+            });
+            
+            // 更新全局变量
+            currentFilePath = path;
+        }
+        // 播放上一曲 - 改进版
+        function playPreviousTrack() {
+            if (!playlist || playlist.length <= 1) return;
+            
+            let prevIndex;
+            
+            if (isRandom) {
+                // 随机模式：随机选择一个不同的索引
+                do {
+                    prevIndex = Math.floor(Math.random() * playlist.length);
+                } while (prevIndex === currentPlayingIndex && playlist.length > 1);
+            } else {
+                // 顺序模式：选择上一个索引
+                prevIndex = (currentPlayingIndex - 1 + playlist.length) % playlist.length;
+            }
+            
+            const prevFile = playlist[prevIndex];
+            const prevPath = folderPath + '/' + prevFile.name;
+            
+            // 不刷新页面，直接加载新音频
+            currentPlayingIndex = prevIndex;
+            loadAudioFile(prevPath);
+            
+            // 更新URL（可选，不会刷新页面）
+            const newUrl = `/play${encodeURIComponent(prevPath)}`;
+            history.pushState(null, '', newUrl);
+            document.title = `ZAY - ${prevFile.name}`;
+        }
+        
+        // 生成并复制直链
+        async function generateAndCopyLink() {
+            try {
+                const response = await fetch(`/api/direct-link/{{ file_path }}`);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || '生成链接失败');
+                
+                // 尝试复制到剪贴板
+                const linkText = result.full_link;
+                if (copyToClipboard(linkText)) {
+                    alert('链接已复制到剪贴板');
+                } else {
+                    alert(`链接生成成功，请手动复制: ${linkText}`);
+                }
+            } catch (error) {
+                alert(`生成链接失败: ${error.message}`);
+            }
+        }
+        
+        // 复制到剪贴板的函数
+        function copyToClipboard(text) {
+            // 尝试使用现代Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).catch(err => {
+                    console.warn('Clipboard API failed:', err);
+                });
+                return true;
+            }
+            
+            // 备用方法
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return successful;
+            } catch (err) {
+                console.error('复制失败:', err);
+                return false;
+            }
+        }
+        
+        // 使用外部播放器打开
+        async function openInExternalPlayer() {
+            try {
+                const response = await fetch(`/api/direct-link/{{ file_path }}`);
+                const result = await response.json();
+                let fullUrl = result.full_link;
+                console.log('尝试使用外部播放器打开:', fullUrl);
+                
+                // 确保URL正确编码
+                if (!fullUrl.startsWith('http')) {
+                    fullUrl = 'http://' + fullUrl;
+                }
+                
+                // 创建一个临时的A标签来打开协议
+                const openProtocol = (protocolUrl) => {
+                    const link = document.createElement('a');
+                    link.href = protocolUrl;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => document.body.removeChild(link), 100);
+                };
+                
+                // 尝试多种播放器协议
+                const protocols = [
+                    `potplayer://${encodeURIComponent(fullUrl)}`,  // PotPlayer
+                    `vlc://${encodeURIComponent(fullUrl)}`,        // VLC
+                    `mpv://${encodeURIComponent(fullUrl)}`,        // MPV
+                    `iina://${encodeURIComponent(fullUrl)}`        // IINA (macOS)
+                ];
+                
+                // 为用户提供选择
+                const playerChoice = prompt(
+                    "请选择外部播放器:\n1: PotPlayer\n2: VLC\n3: MPV\n4: IINA\n5: 直接下载\n(输入数字1-5)",
+                    "1"
+                );
+                
+                if (playerChoice && playerChoice >= 1 && playerChoice <= 4) {
+                    openProtocol(protocols[parseInt(playerChoice) - 1]);
+                    
+                    // 显示后备信息
+                    setTimeout(() => {
+                        alert("如果播放器没有自动打开，请手动打开播放器并使用以下链接播放:\n" + fullUrl);
+                    }, 3000);
+                    
+                } else if (playerChoice == "5" || playerChoice == null) {
+                    // 直接下载
+                    window.location.href = `/download/{{ file_path }}`;
+                } else {
+                    // 未选择有效选项
+                    alert("未选择有效播放器，将尝试使用系统默认播放器打开。如果失败，建议下载后播放。");
+                    window.location.href = fullUrl;
+                }
+            } catch (error) {
+                console.error("获取播放链接失败:", error);
+                alert("获取播放链接失败，将尝试直接下载。");
+                window.location.href = `/download/{{ file_path }}`;
+            }
+        }
+        
+        // 添加背景图片加载功能
+        async function loadBackgroundSettings() {
+            try {
+                // 从服务器加载背景设置
+                const response = await fetch('/api/background');
+                if (!response.ok) throw new Error('获取背景设置失败');
+                
+                const data = await response.json();
+                
+                // 设置当前背景
+                if (data.current_background) {
+                    document.body.style.backgroundImage = `url('${data.current_background}')`;
+                    // 分析背景亮度并适配样式
+                    adjustStylesForBackground(data.current_background);
+                }
+            } catch (error) {
+                console.error('加载背景设置失败:', error);
+            }
+        }
+        
+        // 根据背景图片亮度调整样式
+        function adjustStylesForBackground(url) {
+            if (!url) {
+                // 无背景时恢复默认样式
+                document.documentElement.classList.remove('dark-background');
+                document.documentElement.classList.remove('light-background');
+                return;
+            }
+            
+            // 创建一个临时图像元素来分析背景
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = function() {
+                // 创建Canvas来分析图像
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = this.width;
+                canvas.height = this.height;
+                ctx.drawImage(this, 0, 0);
+                
+                // 获取中心区域的图像数据来分析亮度
+                const imageData = ctx.getImageData(
+                    Math.floor(this.width / 4), 
+                    Math.floor(this.height / 4), 
+                    Math.floor(this.width / 2), 
+                    Math.floor(this.height / 2)
+                );
+                
+                // 计算平均亮度
+                let totalBrightness = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    
+                    // 加权亮度计算方式
+                    const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                    totalBrightness += brightness;
+                }
+                
+                const avgBrightness = totalBrightness / (imageData.data.length / 4);
+                console.log('背景平均亮度:', avgBrightness);
+                
+                // 根据亮度调整样式
+                if (avgBrightness < 0.5) {
+                    // 深色背景
+                    document.documentElement.classList.add('dark-background');
+                    document.documentElement.classList.remove('light-background');
+                } else {
+                    // 浅色背景
+                    document.documentElement.classList.add('light-background');
+                    document.documentElement.classList.remove('dark-background');
+                }
+            };
+            
+            img.onerror = function() {
+                console.error('背景图片加载失败，无法分析亮度');
+            };
+            
+            img.src = url;
+        }
+    </script>
+</body>
+</html>

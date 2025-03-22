@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAY-CLOUD</title>
+    <link href="../static/css/te1.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../static/css/te2.css">
+    <link rel="stylesheet" href="../static/css/in2.css">
+    <link rel="stylesheet" href="../static/css/logo.css">
+    <link rel="icon" href="../static/logo/zay.png" type="image/png">
+</head>
+<body>
+    <!-- 全局通知系统 - 添加在body开始位置 -->
+    <div id="globalNotificationContainer" class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999; width: 80%; max-width: 500px;"></div>
+    <div class="d-flex">
+        <!-- 侧边栏 -->
+        <!-- 背景图片管理按钮 -->
+        <button class="bg-manager-btn" data-bs-toggle="modal" data-bs-target="#backgroundModal">
+            <i class="fas fa-image"></i>
+        </button>
+            <!-- 二维码按钮 -->
+    <button class="bg-manager-btn" style="left: 80px;" data-bs-toggle="modal" data-bs-target="#qrcodeModal">
+        <i class="fas fa-qrcode"></i>
+    </button>
+        <!-- 侧边栏切换按钮 -->
+        <button class="bg-manager-btn" style="left: 140px;" id="toggleSidebarBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <!-- 布局切换按钮 -->
+<button class="bg-manager-btn" style="left: 200px;" id="toggleViewBtn">
+    <i class="fas fa-th"></i>
+</button>
+            <div class="sidebar col-3">
+                <h4 class="mb-4">分类</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item category-tab" data-category="all" onclick="switchCategory('all')">全部文件</li>
+                    <li class="nav-item category-tab" data-category="videos" onclick="switchCategory('videos')">视频</li>
+                    <li class="nav-item category-tab" data-category="audios" onclick="switchCategory('audios')">音频</li>
+                    <li class="nav-item category-tab" data-category="images" onclick="switchCategory('images')">图片</li>
+                    <li class="nav-item category-tab" data-category="documents" onclick="switchCategory('documents')">文档</li>
+                    <li class="nav-item category-tab" data-category="others" onclick="switchCategory('others')">其他</li>
+                </ul>
+    
+    <!-- 添加映射源管理按钮 -->
+            <div class="mt-5">
+                <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#mappingSourcesModal">
+                    <i class="fas fa-folder-tree"></i> 映射源管理
+                </button>
+            </div>
+            <!-- webDAV 按钮 -->
+        <div class="mt-2">
+            <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#webdavConfigModal">
+                <i class="fas fa-network-wired"></i> WebDAV 设置
+            </button>
+        </div>
+        <!-- WebDAV 客户端按钮 -->
+        <div class="mt-2">
+            <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#webdavClientModal">
+                <i class="fas fa-cloud-download-alt"></i> WebDAV 客户端
+            </button>
+        </div>
+
+        </div>
+
+<!-- 背景图片管理模态窗口 -->
+<div class="modal fade" id="backgroundModal" tabindex="-1" aria-labelledby="backgroundModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backgroundModalLabel">
+                    <i class="fas fa-image me-2"></i>背景图片管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>选择或上传背景图片，页面元素将自动应用磨砂玻璃效果</span>
+                </div>
+                
+                <!-- 上传新背景 -->
+                <div class="mb-4">
+                    <h6 class="mb-3">上传新背景</h6>
+                    <div class="input-group mb-3">
+                        <input type="file" class="form-control" id="bgImageInput" accept="image/*>"multiple required>
+                        <button class="btn btn-primary" type="button" onclick="uploadBackgroundImage()">
+                            <i class="fas fa-upload me-1"></i>上传
+                        </button>
+                    </div>
+                </div>
+                
+                
+                <!-- 我的背景 -->
+                <div>
+                    <h6 class="mb-3">我的背景</h6>
+                    <div class="row" id="userBackgrounds">
+                        <!-- 用户上传的背景将在这里显示 -->
+                        <div class="col-12 text-center text-muted py-4" id="noUserBgMessage">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>您还没有上传过背景图片
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-danger" onclick="resetBackground()">
+                    <i class="fas fa-trash me-1"></i>移除背景
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 添加映射源管理模态窗口 -->
+    <div class="modal fade" id="mappingSourcesModal" tabindex="-1" aria-labelledby="mappingSourcesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mappingSourcesModalLabel">
+                    <i class="fas fa-folder-tree me-2"></i>本地映射源管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>映射源是指允许系统搜索匹配文件的本地目录，添加后可以无需上传快速导入已存在的文件</span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <h6>映射源列表</h6>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="getSuggestedPaths()">
+                            <i class="fas fa-magic me-1"></i>添加系统推荐路径
+                        </button>
+                    </div>
+                    <div id="mappingSourcesList" class="list-group mt-2">
+                        <div class="text-center py-3 text-muted">
+                            <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input type="text" id="newMappingSource" class="form-control" 
+                           placeholder="输入新的映射源路径 (如: C:\Downloads 或 /home/user/Downloads)">
+                    <button class="btn btn-primary" type="button" onclick="addMappingSource()">
+                        <i class="fas fa-plus me-1"></i>添加
+                    </button>
+                </div>
+                
+                <div class="text-muted small">
+                    <p><i class="fas fa-lightbulb me-1"></i>提示：</p>
+                    <ul>
+                        <li>Windows 路径示例: C:\Users\用户名\Downloads</li>
+                        <li>Linux 路径示例: /home/用户名/Downloads</li>
+                        <li>添加常用下载文件夹可提高文件自动映射成功率</li>
+                        <li>映射源必须是实际存在的目录</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="form-check me-auto">
+                    <input class="form-check-input" type="checkbox" id="includeSubfolders" checked>
+                    <label class="form-check-label" for="includeSubfolders">
+                        包含子文件夹
+                    </label>
+                </div>
+                <span class="text-muted me-3" id="mappingSourcesCount">当前共有 0 个映射源</span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="saveMappingSources()">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 二维码模态窗口 -->
+<div class="modal fade" id="qrcodeModal" tabindex="-1" aria-labelledby="qrcodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrcodeModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>扫描二维码访问
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrcodeContainer" class="d-flex flex-column align-items-center justify-content-center my-3"></div>
+                <p class="text-muted mt-3 small" id="qrcodeDescription">扫描二维码访问当前页面</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件直链二维码模态框 -->
+<div class="modal fade" id="fileLinkQrcodeModal" tabindex="-1" aria-labelledby="fileLinkQrcodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fileLinkQrcodeModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>文件直链二维码
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="fileLinkQrcodeContainer" class="d-flex flex-column align-items-center justify-content-center my-3"></div>
+                <div id="fileLinkText" class="text-break small mt-2"></div>
+                <button id="copyLinkBtn" class="btn btn-sm btn-primary mt-2">
+                    <i class="fas fa-copy me-1"></i>复制链接
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <!-- 主内容区 -->
+        <div class="content col-9">
+            <div id="notification" class="notification"></div>
+            <div class="d-flex justify-content-between mb-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" id="breadcrumb"></ol>
+                </nav>
+                <div>
+
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-upload"></i> 上传文件
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createFolderModal">
+                        <i class="fas fa-folder-plus"></i> 新建文件夹
+                    </button>
+                </div>
+            </div>
+            <div id="fileList" class="card">
+                <div class="card-body">
+                    <div id="itemsContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建文件夹模态框 -->
+    <div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createFolderModalLabel">新建文件夹</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="folderName" class="form-label">文件夹名称（支持多级，如 folder1/folder2）</label>
+                        <input type="text" class="form-control" id="folderName" required placeholder="输入文件夹名称">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createFolder()">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imagePreviewModalLabel">图片预览</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="previewImage" src="" alt="预览图片" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 音频播放模态框 -->
+    <div class="modal fade" id="audioPlayerModal" tabindex="-1" aria-labelledby="audioPlayerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="audioPlayerModalLabel">音频播放</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="audioPlayerContainer" class="mt-3">
+                        <audio id="audioPlayer" controls class="w-100">
+                            <source src="" type="audio/mpeg">
+                            您的浏览器不支持音频播放
+                        </audio>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <!-- TikTok风格视频播放模态框 -->
+<div class="modal fade" id="videoPlayerModal" tabindex="-1" aria-labelledby="videoPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-black">
+            <!-- 控制元素容器 - 鼠标移动时显示 -->
+            <div class="video-controls-container">
+                <!-- 顶部控制栏 -->
+                <div class="video-top-controls">
+                    <button type="button" class="btn-back" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h5 id="videoPlayerModalLabel" class="video-title">视频预览</h5>
+                    <div class="video-actions">
+                        <button type="button" class="btn-action toggle-fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 底部控制栏 -->
+                <div class="video-bottom-controls">
+                    <!-- 进度条 -->
+                    <div class="video-progress-container">
+                        <div class="video-time-current">00:00</div>
+                        <div class="video-progress">
+                            <div class="video-progress-bar"></div>
+                        </div>
+                        <div class="video-time-total">00:00</div>
+                    </div>
+                    
+                    <!-- 控制按钮 -->
+                    <div class="video-control-buttons">
+                        <button class="btn-control toggle-play">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="btn-control toggle-mute">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        <!-- 添加循环播放按钮 -->
+                        <button class="btn-control toggle-loop">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                        <div class="video-counter" id="videoCounter">1/1</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 视频容器 -->
+            <div class="tiktok-container">
+                <!-- 视频切换区域 -->
+                <div class="video-slider">
+                    <!-- 前一个视频占位 -->
+                    <div class="video-slide previous-slide">
+                        <div class="video-wrapper">
+                            <video class="tiktok-video previous-video" preload="none"></video>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前视频 -->
+                    <div class="video-slide current-slide">
+                        <div class="video-wrapper">
+                            <video id="videoPlayer" class="tiktok-video current-video">
+                                <source src="" type="video/mp4">
+                            </video>
+                            <div class="video-overlay"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 下一个视频占位 -->
+                    <div class="video-slide next-slide">
+                        <div class="video-wrapper">
+                            <video class="tiktok-video next-video" preload="none"></video>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 侧边导航提示 -->
+
+                
+                <!-- 放大提示 -->
+                <div class="zoom-hint">
+                    <span>双击放大/缩小</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModal">上传文件</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm">
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">上传方式</label>
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="uploadType" id="uploadFile" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="uploadFile">选择文件</label>
+                            
+                            <input type="radio" class="btn-check" name="uploadType" id="uploadFolder" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="uploadFolder">选择文件夹</label>
+                        </div>
+                        
+                        <div id="fileInputContainer">
+                            <input type="file" class="form-control" id="fileInput" name="file" multiple>
+                        </div>
+                        <div id="folderInputContainer" style="display:none;">
+                            <input type="file" class="form-control" id="folderInput" name="folder" webkitdirectory directory multiple>
+                            <small class="text-muted">选择整个文件夹进行上传，将保留文件夹结构</small>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableChunking" checked>
+                        <label class="form-check-label" for="enableChunking">
+                            启用分片上传（推荐用于大文件）
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="checkLocalMapping" checked>
+                        <label class="form-check-label" for="checkLocalMapping">
+                            检查本地文件映射（无需传输即可添加文件）
+                        </label>
+                        <small class="form-text text-muted d-block">
+                            如果文件已在服务器本地存在，将直接映射而不上传
+                        </small>
+                    </div>
+                    <input type="hidden" id="uploadDirectory" name="directory" value="">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="startUpload()">上传</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 上传进度模态窗口 -->
+<div class="modal fade" id="uploadProgressModal" tabindex="-1" aria-labelledby="uploadProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadProgressModalLabel">
+                    <i class="fas fa-tasks me-2"></i>上传任务管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="uploadProgressContainer">
+                    <!-- 这里将由 uploadManager.renderUploads() 填充上传进度内容 -->
+                    <p class="text-center text-muted">暂无上传任务</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WebDAV 配置模态窗口 --> 
+<div class="modal fade" id="webdavConfigModal" tabindex="-1" aria-labelledby="webdavConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="webdavConfigModalLabel">
+                    <i class="fas fa-network-wired me-2"></i>WebDAV 服务配置
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>WebDAV 允许您使用 Windows 资源管理器、macOS Finder 等客户端直接访问您的文件</span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="webdavEnabled" checked>
+                        <label class="form-check-label" for="webdavEnabled">启用 WebDAV 服务</label>
+                    </div>
+                </div>
+                
+                <div id="webdavSettingsContainer">
+                    <div class="mb-3">
+                        <label for="webdavPort" class="form-label">端口</label>
+                        <input type="number" class="form-control" id="webdavPort" value="5889">
+                        <div class="form-text">WebDAV 服务将在此端口上运行</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="webdavAuthEnabled" checked>
+                            <label class="form-check-label" for="webdavAuthEnabled">启用身份验证</label>
+                        </div>
+                        <div class="form-text">推荐启用身份验证以保护您的文件</div>
+                    </div>
+                    
+                    <div id="webdavAuthSettings">
+                        <div class="mb-3">
+                            <label for="webdavUsername" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="webdavUsername" value="admin">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="webdavPassword" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="webdavPassword" value="admin">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="webdavStatusContainer" class="mt-4">
+                    <h6>服务状态</h6>
+                    <div class="d-flex align-items-center mt-2">
+                        <span id="webdavStatusIcon" class="me-2">
+                            <i class="fas fa-circle-notch fa-spin text-primary"></i>
+                        </span>
+                        <span id="webdavStatusText">请保存后再检查状态...</span>
+                    </div>
+                    
+                    <div id="webdavUrlContainer" class="mt-2" style="display: none;">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="webdavUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copyWebdavUrlBtn">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">复制此 URL 添加到 WebDAV 客户端</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="saveWebdavConfigBtn">保存设置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- 右下角的上传进度查看按钮 -->
+<div id="uploadProgressButton" style="position: fixed; bottom: 20px; right: 20px; display: none; z-index: 999;">
+    <button class="btn btn-info btn-lg rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#uploadProgressModal">
+        <i class="fas fa-tasks"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="uploadCounter">
+            0
+        </span>
+    </button>
+</div>
+
+
+
+<!-- WebDAV 客户端管理模态窗口 --> 
+<div class="modal fade" id="webdavClientModal" tabindex="-1" aria-labelledby="webdavClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="webdavClientModalLabel">
+                    <i class="fas fa-cloud me-2"></i>WebDAV 客户端管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>WebDAV 客户端允许您连接到远程 WebDAV 服务器，并将文件下载到本地存储</span>
+                </div>
+                
+                <!-- 连接列表 -->
+                <div id="webdavConnectionListContainer">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">WebDAV 连接</h6>
+                        <button id="showAddWebdavBtn" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>添加连接
+                        </button>
+                    </div>
+                    
+                    <div id="webdavConnectionsList">
+                        <div class="text-center text-muted p-4">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 添加/编辑连接表单 -->
+                <div id="webdavConnectionFormContainer" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0" id="connectionFormTitle">添加 WebDAV 连接</h6>
+                        <button id="cancelEditBtn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>返回列表
+                        </button>
+                    </div>
+                    
+                    <form id="webdavConnectionForm">
+                        <div class="mb-3">
+                            <label for="connectionName" class="form-label">连接名称</label>
+                            <input type="text" class="form-control" id="connectionName" required>
+                            <div class="form-text">为此连接指定一个易记的名称</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="connectionUrl" class="form-label">WebDAV 服务器地址</label>
+                            <input type="url" class="form-control" id="connectionUrl" required>
+                            <div class="form-text">例如: http://example.com/webdav/ 或 https://dav.jianguoyun.com/dav/</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="connectionUsername" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="connectionUsername">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="connectionPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="connectionPassword">
+                                <div class="form-text">编辑时留空则保持原密码不变</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="connectionFolder" class="form-label">根文件夹路径</label>
+                            <input type="text" class="form-control" id="connectionFolder" value="/">
+                            <div class="form-text">指定要访问的WebDAV子目录，默认为根目录 "/"</div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="connectionEnabled" checked>
+                            <label class="form-check-label" for="connectionEnabled">
+                                启用此连接
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" id="testConnectionBtn">
+                                <i class="fas fa-plug me-1"></i>测试连接
+                            </button>
+                            <button type="button" class="btn btn-primary" id="saveConnectionBtn">
+                                添加连接
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 添加二维码生成库 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="../static/js/main.js"></script>
+<script src="../static/js/bg.js"></script>
+<script src="../static/js/QR.js"></script>
+<script>
+    // 侧边栏切换功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggleSidebarBtn');
+        const sidebar = document.querySelector('.sidebar');
+        const content = document.querySelector('.content');
+        let sidebarVisible = true;
+        
+        toggleBtn.addEventListener('click', function() {
+            sidebarVisible = !sidebarVisible;
+            
+            if (sidebarVisible) {
+                // 显示侧边栏
+                sidebar.style.transform = 'translateX(0)';
+                sidebar.style.opacity = '1';
+                content.style.marginLeft = 'calc(var(--sidebar-width) + 30px)';
+                toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            } else {
+                // 隐藏侧边栏
+                sidebar.style.transform = 'translateX(-100%)';
+                sidebar.style.opacity = '0';
+                content.style.marginLeft = '30px';
+                toggleBtn.innerHTML = '<i class="fas fa-bars-staggered"></i>';
+            }
+        });
+    });
+     // 侧边栏切换功能
+     document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggleSidebarBtn');
+        const sidebar = document.querySelector('.sidebar');
+        const content = document.querySelector('.content');
+        let sidebarVisible = true;
+        
+        toggleBtn.addEventListener('click', function() {
+            sidebarVisible = !sidebarVisible;
+            
+            if (sidebarVisible) {
+                // 显示侧边栏
+                sidebar.style.transform = 'translateX(0)';
+                sidebar.style.opacity = '1';
+                content.style.marginLeft = 'calc(var(--sidebar-width) + 30px)';
+                toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            } else {
+                // 隐藏侧边栏
+                sidebar.style.transform = 'translateX(-100%)';
+                sidebar.style.opacity = '0';
+                content.style.marginLeft = '30px';
+                toggleBtn.innerHTML = '<i class="fas fa-bars-staggered"></i>';
+            }
+        });
+        
+        // 添加视图切换功能
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const fileListContainer = document.getElementById('fileList');
+    let isCardView = localStorage.getItem('isCardView') === 'true';
+    
+    // 初始化视图状态
+    if (isCardView) {
+        fileListContainer.classList.add('card-view-mode');
+        toggleViewBtn.innerHTML = '<i class="fas fa-list"></i>';
+    } else {
+        fileListContainer.classList.remove('card-view-mode');
+        toggleViewBtn.innerHTML = '<i class="fas fa-th"></i>';
+    }
+    
+    // 添加切换事件处理
+    toggleViewBtn.addEventListener('click', function() {
+        isCardView = !isCardView;
+        
+        if (isCardView) {
+            fileListContainer.classList.add('card-view-mode');
+            toggleViewBtn.innerHTML = '<i class="fas fa-list"></i>';
+        } else {
+            fileListContainer.classList.remove('card-view-mode');
+            toggleViewBtn.innerHTML = '<i class="fas fa-th"></i>';
+        }
+        
+        // 保存视图偏好
+        localStorage.setItem('isCardView', isCardView);
+        
+        // 重新渲染文件列表
+        if (fileListCache) {
+            renderItems(fileListCache.items, fileListCache.categories);
+        }
+    });
+    });
+
+    // 视频播放与切换功能
+// 全局变量，用于视频切换功能
+let currentVideoIndex = 0;
+let folderVideos = [];
+let wheelTimeout = null;
+
+// 视频播放功能（增强版）
+function playVideo(path, name) {
+    // 初始化当前目录下的视频列表
+    getFolderVideos(path);
+    
+    const modal = new bootstrap.Modal(document.getElementById('videoPlayerModal'));
+    const modalTitle = document.getElementById('videoPlayerModalLabel');
+    const videoPlayer = document.getElementById('videoPlayer');
+
+    // 设置模态框标题和视频源
+    modalTitle.textContent = `视频预览: ${name}`;
+    videoPlayer.querySelector('source').src = `/view/${path}`;
+    videoPlayer.load(); // 重新加载视频
+
+    // 重置视频状态
+    videoPlayer.currentTime = 0;
+    videoPlayer.volume = 1;
+    videoPlayer.muted = false;
+    
+    // 显示模态框
+    modal.show();
+
+    // 模态框显示后自动播放
+    document.getElementById('videoPlayerModal').addEventListener('shown.bs.modal', function () {
+        videoPlayer.play().catch(e => console.warn('自动播放失败:', e));
+        
+        // 添加视频切换事件监听
+        setupVideoNavigation();
+        
+        // 预加载相邻视频
+        preloadAdjacentVideos();
+    }, { once: true });
+    
+    // 当模态窗口关闭时停止播放并移除事件监听
+    document.getElementById('videoPlayerModal').addEventListener('hidden.bs.modal', function() {
+        // 停止视频播放
+        videoPlayer.pause();
+        videoPlayer.currentTime = 0;
+        // 重置视频源以释放资源
+        setTimeout(() => {
+            videoPlayer.querySelector('source').src = '';
+            videoPlayer.load();
+        }, 100);
+        
+        // 移除事件监听
+        document.removeEventListener('keydown', handleVideoKeyNavigation);
+        this.removeEventListener('wheel', handleVideoWheelNavigation);
+        
+        // 清除视频预加载
+        clearVideoPreloads();
+    });
+}
+
+// 获取当前文件夹下的所有视频文件
+function getFolderVideos(filePath) {
+    // 获取当前路径的目录部分
+    const pathParts = filePath.split('/');
+    pathParts.pop(); // 移除文件名
+    const currentFolder = pathParts.join('/');
+    
+    console.log('正在获取文件夹视频列表:', currentFolder);
+    
+    // 获取当前目录下的所有项目
+    fetch(`/api/files?path=${encodeURIComponent(currentFolder)}`)
+        .then(response => response.json())
+        .then(data => {
+            // 筛选出视频文件
+            if (!data.items || !Array.isArray(data.items)) {
+                console.error('获取文件列表失败:', data);
+                return;
+            }
+            
+            folderVideos = data.items.filter(item => {
+                return item.type === "file" && 
+                       (item.media_type === "video" || 
+                        (item.name && isVideoFile(item.name)));
+            });
+            
+            console.log('文件夹中的视频文件:', folderVideos);
+            
+            // 设置当前视频索引
+            currentVideoIndex = folderVideos.findIndex(video => 
+                video.path === filePath || video.path.replace(/\\/g, '/') === filePath);
+                
+            console.log('当前视频索引:', currentVideoIndex, '总视频数:', folderVideos.length);
+            
+            // 更新计数器和信息
+            updateVideoUI();
+        })
+        .catch(error => {
+            console.error('获取文件夹视频列表失败:', error);
+            showNotification('获取视频列表失败', false);
+        });
+}
+
+// 设置视频导航
+function setupVideoNavigation() {
+    // 键盘事件监听
+    document.addEventListener('keydown', handleVideoKeyNavigation);
+    
+    // 鼠标滚轮事件监听
+    const modalElement = document.getElementById('videoPlayerModal');
+    modalElement.addEventListener('wheel', handleVideoWheelNavigation, { passive: false });
+    
+    // 添加视频指示器到模态框
+    updateVideoUI();
+}
+
+// 处理键盘导航
+function handleVideoKeyNavigation(e) {
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateToVideo(-1); // 上一个视频
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        navigateToVideo(1);  // 下一个视频
+    }
+}
+
+// 处理滚轮导航
+function handleVideoWheelNavigation(e) {
+    e.preventDefault(); // 防止页面滚动
+    
+    // 防止滚轮事件过快触发
+    if (wheelTimeout !== null) {
+        return;
+    }
+    
+    // 根据滚轮方向切换视频
+    if (e.deltaY < 0) {
+        // 向上滚动，切换到上一个视频
+        navigateToVideo(-1);
+    } else if (e.deltaY > 0) {
+        // 向下滚动，切换到下一个视频
+        navigateToVideo(1);
+    }
+    
+    // 设置延迟，防止连续触发
+    wheelTimeout = setTimeout(() => {
+        wheelTimeout = null;
+    }, 500); // 设置500毫秒的冷却时间
+}
+
+// 切换到上一个或下一个视频（带动画）
+function navigateToVideo(direction) {
+    if (!folderVideos || folderVideos.length <= 1 || currentVideoIndex === -1) {
+        console.log('无法切换视频:', 
+            !folderVideos ? '视频列表未初始化' : 
+            folderVideos.length <= 1 ? '视频列表中只有一个视频' : 
+            '当前视频索引无效');
+        return;
+    }
+    
+    // 计算新的索引（循环）
+    let newIndex = currentVideoIndex + direction;
+    if (newIndex < 0) newIndex = folderVideos.length - 1;
+    if (newIndex >= folderVideos.length) newIndex = 0;
+    
+    // 获取当前视频
+    const video = folderVideos[newIndex];
+    if (!video || !video.path) {
+        console.error('视频对象无效:', video);
+        return;
+    }
+    
+    console.log('切换到视频:', video.name, '路径:', video.path);
+    
+    // 设置新视频路径
+    const videoPath = video.path.replace(/\\/g, '/');
+    
+    // 准备动画元素
+    const slider = document.querySelector('.video-slider');
+    const currentSlide = document.querySelector('.current-slide');
+    const prevSlide = document.querySelector('.previous-slide');
+    const nextSlide = document.querySelector('.next-slide');
+    
+    // 停止当前视频播放
+    const videoPlayer = document.getElementById('videoPlayer');
+    videoPlayer.pause();
+    
+    // 根据方向设置目标视频
+    let targetSlide, targetVideo;
+    if (direction < 0) {
+        // 向上滑动到上一个视频
+        targetSlide = prevSlide;
+        targetVideo = targetSlide.querySelector('video');
+    } else {
+        // 向下滑动到下一个视频
+        targetSlide = nextSlide;
+        targetVideo = targetSlide.querySelector('video');
+    }
+    
+    // 确保目标视频已设置好源
+    if (targetVideo.src === '' || !targetVideo.src.includes(videoPath)) {
+        targetVideo.src = `/view/${videoPath}`;
+        targetVideo.load();
+    }
+    
+    // 添加过渡动画类
+    slider.classList.add('sliding');
+    slider.classList.add(direction < 0 ? 'sliding-up' : 'sliding-down');
+    
+    // 动画完成后重置状态
+    setTimeout(() => {
+        // 设置当前索引
+        currentVideoIndex = newIndex;
+        
+        // 更新主视频播放器
+        videoPlayer.querySelector('source').src = `/view/${videoPath}`;
+        videoPlayer.load();
+        videoPlayer.play().catch(e => console.warn('自动播放失败:', e));
+        
+        // 移除滑动类
+        slider.classList.remove('sliding');
+        slider.classList.remove('sliding-up');
+        slider.classList.remove('sliding-down');
+        
+        // 更新视频信息和计数器
+        updateVideoUI();
+        
+        // 重新预加载相邻视频
+        preloadAdjacentVideos();
+    }, 300); // 动画持续时间
+    
+    // 显示切换指示动画
+    showSwitchIndicator(direction);
+}
+
+// 预加载相邻的视频
+function preloadAdjacentVideos() {
+    if (!folderVideos || folderVideos.length <= 1 || currentVideoIndex === -1) return;
+    
+    // 获取相邻视频索引（循环）
+    const prevIndex = currentVideoIndex > 0 ? currentVideoIndex - 1 : folderVideos.length - 1;
+    const nextIndex = (currentVideoIndex + 1) % folderVideos.length;
+    
+    // 获取视频元素
+    const prevVideo = document.querySelector('.previous-video');
+    const nextVideo = document.querySelector('.next-video');
+    
+    // 设置视频路径
+    if (prevVideo && folderVideos[prevIndex]) {
+        const prevPath = folderVideos[prevIndex].path.replace(/\\/g, '/');
+        prevVideo.src = `/view/${prevPath}`;
+        prevVideo.load();
+        prevVideo.volume = 0; // 静音预加载
+        prevVideo.preload = "metadata"; // 只预加载元数据
+    }
+    
+    if (nextVideo && folderVideos[nextIndex]) {
+        const nextPath = folderVideos[nextIndex].path.replace(/\\/g, '/');
+        nextVideo.src = `/view/${nextPath}`;
+        nextVideo.load();
+        nextVideo.volume = 0; // 静音预加载
+        nextVideo.preload = "metadata"; // 只预加载元数据
+    }
+}
+
+// 清除预加载视频
+function clearVideoPreloads() {
+    const prevVideo = document.querySelector('.previous-video');
+    const nextVideo = document.querySelector('.next-video');
+    
+    if (prevVideo) {
+        prevVideo.src = '';
+        prevVideo.load();
+    }
+    
+    if (nextVideo) {
+        nextVideo.src = '';
+        nextVideo.load();
+    }
+}
+
+// 显示切换指示动画
+function showSwitchIndicator(direction) {
+    const indicator = direction < 0 ? 
+        document.querySelector('.hint-up') : 
+        document.querySelector('.hint-down');
+    
+    if (indicator) {
+        // 添加高亮类
+        indicator.classList.add('active');
+        
+        // 0.5秒后移除高亮
+        setTimeout(() => {
+            indicator.classList.remove('active');
+        }, 500);
+    }
+}
+
+// 检查文件是否为视频文件（通过文件扩展名）
+function isVideoFile(filename) {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv'];
+    const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+    return videoExtensions.includes(ext);
+}
+
+// 更新视频UI信息
+function updateVideoUI() {
+    if (folderVideos.length === 0 || currentVideoIndex === -1) return;
+    
+    const video = folderVideos[currentVideoIndex];
+    
+    // 更新标题
+    const modalTitle = document.getElementById('videoPlayerModalLabel');
+    modalTitle.textContent = `视频预览: ${video.name}`;
+    
+    // 更新计数器
+    const counter = document.getElementById('videoCounter');
+    if (counter) {
+        counter.textContent = `${currentVideoIndex + 1}/${folderVideos.length}`;
+    }
+}
+
+// 音频播放
+function playAudio(path, name) {
+    const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
+    const modalTitle = document.getElementById('audioPlayerModalLabel');
+    const audioPlayer = document.getElementById('audioPlayer');
+    
+    // 设置模态框标题和音频源
+    modalTitle.textContent = `音频播放: ${name}`;
+    audioPlayer.querySelector('source').src = `/view/${path}`;
+    audioPlayer.load(); // 重新加载音频
+    
+    // 显示模态框
+    modal.show();
+    
+    // 模态框显示后自动播放
+    document.getElementById('audioPlayerModal').addEventListener('shown.bs.modal', function () {
+        audioPlayer.play().catch(e => console.warn('自动播放失败:', e));
+    }, { once: true });
+    
+    // 当模态窗口关闭时停止播放
+    document.getElementById('audioPlayerModal').addEventListener('hidden.bs.modal', function() {
+        // 停止音频播放
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        
+        // 重置音频源以释放资源
+        setTimeout(() => {
+            audioPlayer.querySelector('source').src = '';
+            audioPlayer.load();
+        }, 100);
+    });
+}
+
+// TikTok风格视频播放器控制功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取视频模态窗口元素
+    const videoModal = document.getElementById('videoPlayerModal');
+    if (!videoModal) return;
+    
+    const videoPlayer = document.getElementById('videoPlayer');
+    const controlsContainer = videoModal.querySelector('.video-controls-container');
+    const videoOverlay = videoModal.querySelector('.video-overlay');
+    const playButton = videoModal.querySelector('.toggle-play');
+    const muteButton = videoModal.querySelector('.toggle-mute');
+    const loopButton = videoModal.querySelector('.toggle-loop');
+    const fullscreenButton = videoModal.querySelector('.toggle-fullscreen');
+    const progressBar = videoModal.querySelector('.video-progress-bar');
+    const progressContainer = videoModal.querySelector('.video-progress');
+    const currentTimeEl = videoModal.querySelector('.video-time-current');
+    const totalTimeEl = videoModal.querySelector('.video-time-total');
+    
+    let controlsTimeout;
+    let isPlaying = false;
+    let isFullscreen = false;
+    let isLooping = false;
+    let videoZoomed = false;
+    let zoomLevel = 1;
+    
+    // 显示控制界面
+    function showControls() {
+        videoModal.classList.add('video-controls-visible');
+        
+        // 清除之前的定时器并设置新的定时器
+        clearTimeout(controlsTimeout);
+        controlsTimeout = setTimeout(hideControls, 3000); // 3秒后隐藏
+    }
+    
+    // 隐藏控制界面
+    function hideControls() {
+        videoModal.classList.remove('video-controls-visible');
+    }
+    
+    // 切换播放/暂停
+    function togglePlay() {
+        if (videoPlayer.paused) {
+            videoPlayer.play();
+            playButton.innerHTML = '<i class="fas fa-pause"></i>';
+            isPlaying = true;
+        } else {
+            videoPlayer.pause();
+            playButton.innerHTML = '<i class="fas fa-play"></i>';
+            isPlaying = false;
+        }
+    }
+    
+    // 切换静音
+    function toggleMute() {
+        videoPlayer.muted = !videoPlayer.muted;
+        muteButton.innerHTML = videoPlayer.muted ? 
+            '<i class="fas fa-volume-mute"></i>' : 
+            '<i class="fas fa-volume-up"></i>';
+    }
+    
+    // 切换循环播放
+    function toggleLoop() {
+        isLooping = !isLooping;
+        videoPlayer.loop = isLooping;
+        loopButton.classList.toggle('active', isLooping);
+    }
+    
+    // 切换全屏
+// 切换全屏
+function toggleFullscreen() {
+    // 获取视频容器元素，而不是整个模态框
+    const videoContainer = videoPlayer.closest('.video-wrapper');
+    
+    if (!document.fullscreenElement) {
+        // 让视频容器进入全屏
+        videoContainer.requestFullscreen().catch(err => {
+            console.error(`全屏错误: ${err.message}`);
+        });
+        fullscreenButton.innerHTML = '<i class="fas fa-compress"></i>';
+        isFullscreen = true;
+        // 添加全屏样式
+        videoContainer.classList.add('fullscreen-video');
+    } else {
+        document.exitFullscreen();
+        fullscreenButton.innerHTML = '<i class="fas fa-expand"></i>';
+        isFullscreen = false;
+        // 移除全屏样式
+        videoContainer.classList.remove('fullscreen-video');
+    }
+}
+    
+    // 更新视频进度条
+    function updateProgressBar() {
+        if (!videoPlayer) return;
+        
+        const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+        progressBar.style.width = `${percent}%`;
+        
+        // 更新时间显示
+        currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
+        if (!isNaN(videoPlayer.duration)) {
+            totalTimeEl.textContent = formatTime(videoPlayer.duration);
+        }
+    }
+    
+    // 时间格式化
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // 在进度条上点击跳转
+    function seekVideo(e) {
+        const rect = progressContainer.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        videoPlayer.currentTime = pos * videoPlayer.duration;
+    }
+    
+    // 双击放大/缩小视频
+    function toggleZoom(e) {
+        const videoWrapper = videoPlayer.closest('.video-wrapper');
+        
+        if (!videoZoomed) {
+            // 放大，以点击位置为中心
+            const rect = videoPlayer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 计算缩放中心点
+            const transformOriginX = (x / rect.width) * 100;
+            const transformOriginY = (y / rect.height) * 100;
+            
+            zoomLevel = 2;
+            videoPlayer.style.transformOrigin = `${transformOriginX}% ${transformOriginY}%`;
+            videoPlayer.style.transform = `scale(${zoomLevel})`;
+            videoWrapper.classList.add('video-zoomed');
+            
+            // 显示提示
+            const zoomHint = videoModal.querySelector('.zoom-hint');
+            zoomHint.classList.add('show');
+            setTimeout(() => zoomHint.classList.remove('show'), 2000);
+        } else {
+            // 缩小回原始大小
+            zoomLevel = 1;
+            videoPlayer.style.transform = 'scale(1)';
+            videoWrapper.classList.remove('video-zoomed');
+        }
+        
+        videoZoomed = !videoZoomed;
+    }
+    
+    // 事件监听：模态窗口显示时设置
+    videoModal.addEventListener('shown.bs.modal', function() {
+        // 显示初始控制界面
+        showControls();
+        
+        // 重置播放按钮状态
+        isPlaying = !videoPlayer.paused;
+        playButton.innerHTML = isPlaying ? 
+            '<i class="fas fa-pause"></i>' : 
+            '<i class="fas fa-play"></i>';
+            
+        // 重置全屏按钮状态    
+        isFullscreen = !!document.fullscreenElement;
+        fullscreenButton.innerHTML = isFullscreen ? 
+            '<i class="fas fa-compress"></i>' : 
+            '<i class="fas fa-expand"></i>';
+            
+        // 重置循环按钮状态
+        isLooping = videoPlayer.loop;
+        loopButton.classList.toggle('active', isLooping);
+        
+        // 重置缩放状态
+        if (videoZoomed) {
+            const videoWrapper = videoPlayer.closest('.video-wrapper');
+            videoPlayer.style.transform = 'scale(1)';
+            videoWrapper.classList.remove('video-zoomed');
+            videoZoomed = false;
+        }
+        
+        // 视频加载完成后更新总时长
+        videoPlayer.addEventListener('loadedmetadata', function() {
+            totalTimeEl.textContent = formatTime(videoPlayer.duration);
+        });
+    });
+    
+    // 事件监听：鼠标移动时显示控制界面
+    videoModal.addEventListener('mousemove', showControls);
+    
+    // 事件监听：进度更新
+    videoPlayer.addEventListener('timeupdate', updateProgressBar);
+    
+    // 事件监听：播放/暂停控制
+    playButton.addEventListener('click', togglePlay);
+    videoOverlay.addEventListener('click', togglePlay); // 单击视频区域也能切换播放状态
+    
+    // 事件监听：双击缩放
+    videoOverlay.addEventListener('dblclick', toggleZoom);
+    
+    // 事件监听：静音控制
+    muteButton.addEventListener('click', toggleMute);
+    
+    // 事件监听：循环播放控制
+    loopButton.addEventListener('click', toggleLoop);
+    
+    // 事件监听：全屏控制
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    
+    // 事件监听：进度条控制
+    progressContainer.addEventListener('click', seekVideo);
+    
+    // 事件监听：退出全屏事件
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement && isFullscreen) {
+            fullscreenButton.innerHTML = '<i class="fas fa-expand"></i>';
+            isFullscreen = false;
+        }
+    });
+    
+    // 监听视频播放/暂停状态变化
+    videoPlayer.addEventListener('play', function() {
+        playButton.innerHTML = '<i class="fas fa-pause"></i>';
+        isPlaying = true;
+    });
+    
+    videoPlayer.addEventListener('pause', function() {
+        playButton.innerHTML = '<i class="fas fa-play"></i>';
+        isPlaying = false;
+    });
+    
+    // 监听ESC按键，如果视频处于放大状态，则先恢复原大小
+    document.addEventListener('keydown', function(e) {
+        if (!videoModal.classList.contains('show')) return;
+        
+        if (e.key === 'Escape' && videoZoomed) {
+            e.preventDefault();
+            e.stopPropagation();
+            const videoWrapper = videoPlayer.closest('.video-wrapper');
+            videoPlayer.style.transform = 'scale(1)';
+            videoWrapper.classList.remove('video-zoomed');
+            videoZoomed = false;
+            return false;
+        }
+        else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateToVideo(-1); // 上一个视频
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            navigateToVideo(1);  // 下一个视频
+        }
+        else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            videoPlayer.currentTime -= 10; // 后退10秒
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            videoPlayer.currentTime += 10; // 前进10秒
+        }
+        else if (e.key === ' ') {
+            e.preventDefault();
+            togglePlay(); // 播放/暂停
+        }
+        else if(e.key === 'm' || e.key === 'M'){
+            e.preventDefault();
+            toggleMute(); // 静音/取消静音
+        }
+        else if(e.key === 'l' || e.key === 'L'){
+            e.preventDefault();
+            toggleLoop(); // 循环/取消循环
+        }
+        else if(e.key === 'f' || e.key === 'F'){
+            e.preventDefault();
+            toggleFullscreen(); // 全屏/退出全屏
+        }
+    });
+    
+ // 关闭视频模态框前停止视频播放 (使用原生JS替换jQuery代码)
+ document.getElementById('videoPlayerModal').addEventListener('hide.bs.modal', function (e) {
+        videoPlayer.pause();
+    });
+});
+
+// 关闭音频模态框时停止音频播放 (使用原生JS替换jQuery代码)
+document.getElementById('audioPlayerModal').addEventListener('hidden.bs.modal', function (e) {
+    const audioPlayer = document.getElementById('audioPlayer');
+    if (audioPlayer) {
+        audioPlayer.pause();
+    }
+});
+</script>
+
+<style>
+    /* 添加视频滑动动画样式 */
+    .video-slider {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        transition: transform 0.3s ease-out;
+    }
+    
+    .video-slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .current-slide {
+        z-index: 2;
+    }
+    
+    .previous-slide {
+        transform: translateY(-100%);
+        z-index: 1;
+    }
+    
+    .next-slide {
+        transform: translateY(100%);
+        z-index: 1;
+    }
+    
+    .sliding {
+        transition: transform 0.3s ease-out;
+    }
+    
+    .sliding-up .current-slide {
+        transform: translateY(100%);
+    }
+    
+    .sliding-up .previous-slide {
+        transform: translateY(0);
+    }
+    
+    .sliding-down .current-slide {
+        transform: translateY(-100%);
+    }
+    
+    .sliding-down .next-slide {
+        transform: translateY(0);
+    }
+    
+    /* 导航提示高亮样式 */
+    .nav-hints {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        z-index: 3;
+        pointer-events: none;
+    }
+    
+    .hint-up, .hint-down {
+        display: flex;
+        align-items: center;
+        color: rgba(255,255,255,0.6);
+        transition: all 0.3s ease;
+        padding: 10px;
+        border-radius: 20px;
+    }
+    
+    .hint-up.active, .hint-down.active {
+        color: white;
+        background-color: rgba(255,255,255,0.2);
+        transform: scale(1.1);
+    }
+    
+    /* 循环按钮激活样式 */
+    .toggle-loop.active {
+        color: #3a86ff;
+    }
+    
+</style>
+<script>
+    // 切换文件/文件夹上传选项
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadFile = document.getElementById('uploadFile');
+        const uploadFolder = document.getElementById('uploadFolder');
+        const fileInputContainer = document.getElementById('fileInputContainer');
+        const folderInputContainer = document.getElementById('folderInputContainer');
+        
+        uploadFile.addEventListener('change', function() {
+            fileInputContainer.style.display = 'block';
+            folderInputContainer.style.display = 'none';
+        });
+        
+        uploadFolder.addEventListener('change', function() {
+            fileInputContainer.style.display = 'none';
+            folderInputContainer.style.display = 'block';
+        });
+    });
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="../static/js/webdav.js"></script>
+<script src="../static/js/webdav_c.js"></script>
+<script src="../static/js/notifications.js"></script>
+</body>
+</html>

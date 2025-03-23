@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAY - {{ file_name }}</title>
+    <link href="../../../static/css/te1.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- 新播放器依赖 -->
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+    <link href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css" rel="stylesheet">
+    <link rel="icon" href="../static/logo/zay.png" type="image/png">
+    
+    <!-- 保留原样式 -->
+    <style>
+        body { 
+            background-color: #f5f6fa; 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif;
+        }
+        .main-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 30px auto;
+            gap: 20px;
+        }
+        .player-container { 
+            flex: 1;
+            padding: 20px; 
+            background: #fff; 
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s;
+        }
+        .playlist-container {
+            width: 300px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .playlist-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .playlist-item {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .playlist-item:hover {
+            background-color: #f8f9fa;
+        }
+        .playlist-item.active {
+            background-color: #e9f5ff;
+            border-left: 3px solid #007bff;
+        }
+        .playlist-item-icon {
+            color: #6c757d;
+            width: 20px;
+            text-align: center;
+        }
+        .playlist-item-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.9rem;
+        }
+        .controls { 
+            margin-top: 15px; 
+            display: flex;
+            gap: 10px;
+        }
+        .btn { 
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn:hover { 
+            transform: translateY(-2px); 
+        }
+        h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #495057;
+        }
+        .file-icon {
+            color: #6c757d;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading-indicator {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        .loading-indicator .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border: 4px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top: 4px solid #007bff;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .buffering-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: none;
+            z-index: 100;
+        }
+        .network-status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+            color: #6c757d;
+            display: none;
+        }
+        .retry-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+        }
+        .no-files-message {
+            text-align: center;
+            color: #6c757d;
+            padding: 20px 0;
+        }
+        @media (max-width: 992px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .playlist-container {
+                width: auto;
+                max-height: 300px;
+            }
+        }
+    </style>
+    <!-- 添加Video.js专用样式 -->
+    <style>
+        /* 视频播放器样式 */
+        .video-js {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        /* 为音频播放设置合适高度 */
+        .vjs-audio {
+            min-height: 120px;
+        }
+        
+        /* 自定义控制栏样式 */
+        .video-js .vjs-control-bar {
+            background-color: rgba(0, 0, 0, 0.7);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        /* 缓冲动画样式 */
+        .vjs-waiting .vjs-loading-spinner {
+            border: 6px solid rgba(43, 51, 63, 0.7);
+        }
+        
+        .vjs-waiting .vjs-loading-spinner:before,
+        .vjs-waiting .vjs-loading-spinner:after {
+            border-top-color: #3498db;
+        }
+        
+        /* 定制播放按钮 */
+        .vjs-big-play-button {
+            background-color: rgba(0, 123, 255, 0.7) !important;
+            border-color: rgba(0, 123, 255, 0.8) !important;
+            border-radius: 50% !important;
+            width: 80px !important;
+            height: 80px !important;
+            line-height: 80px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .vjs-big-play-button:hover {
+            background-color: rgba(0, 123, 255, 0.9) !important;
+            transform: scale(1.1);
+        }
+        
+        /* 清晰度选择菜单 */
+        .vjs-quality-selector .vjs-menu-content {
+            background-color: rgba(28, 28, 28, 0.9);
+            border-radius: 4px;
+        }
+        
+        /* 黑暗主题和亮色主题适配 */
+        .dark-background .video-js {
+            box-shadow: 0 8px 30px rgba(0, 123, 255, 0.2);
+        }
+        
+        /* 自定义控制栏按钮悬停效果 */
+        .video-js .vjs-control:hover {
+            color: #3498db;
+        }
+        
+        /* 进度条样式 */
+        .video-js .vjs-play-progress {
+            background-color: #3498db;
+        }
+        
+        .video-js .vjs-progress-control:hover .vjs-progress-holder {
+            font-size: 1.3em;
+        }
+        
+        /* 音量条样式 */
+        .video-js .vjs-volume-level {
+            background-color: #3498db;
+        }
+        
+        /* 加载提示样式 */
+        .advanced-loading-message {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+        }
+        
+        /* 自定义视频信息显示 */
+        .video-info-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+            color: white;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .video-js:hover .video-info-overlay {
+            opacity: 1;
+        }
+        
+        /* 亮暗两种主题下的样式适配 */
+        .dark-background .video-js .vjs-control-bar {
+            background-color: rgba(12, 12, 12, 0.8);
+        }
+        
+        .light-background .video-js .vjs-control-bar {
+            background-color: rgba(42, 42, 42, 0.75);
+        }
+    </style>
+    <style>
+        body { 
+            background-color: #f5f6fa; 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        /* 深色背景适配样式 */
+        .dark-background .player-container,
+        .dark-background .playlist-container {
+            background-color: rgba(40, 40, 40, 0.85);
+            color: #f0f0f0;
+            border: 1px solid rgba(80, 80, 80, 0.3);
+        }
+        
+        .dark-background .playlist-item:hover {
+            background-color: rgba(60, 60, 60, 0.95);
+        }
+        
+        .dark-background .playlist-item.active {
+            background-color: rgba(0, 123, 255, 0.7);
+        }
+        
+        .dark-background .btn {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 浅色背景适配样式 */
+        .light-background .player-container,
+        .light-background .playlist-container {
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+    </style>
+    <style>
+        /* 音频播放器增强样式 */
+        .audio-visualizer {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .dark-background .audio-visualizer {
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
+        }
+        
+        .audio-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="player-container">
+            <h3 class="mb-3">
+                {% if is_audio %}
+                <i class="fas fa-music file-icon"></i>
+                {% else %}
+                <i class="fas fa-video file-icon"></i>
+                {% endif %}
+                {{ file_name }}
+            </h3>
+            
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>加载媒体中，请稍候...</p>
+            </div>
+            
+            <div class="player-wrapper mb-4 position-relative">
+                <div id="bufferingIndicator" class="buffering-indicator">
+                    <i class="fas fa-circle-notch fa-spin"></i> 正在缓冲...
+                </div>
+                
+                {% if is_audio %}
+                <!-- 音频播放器 -->
+                <div class="audio-player-container">
+                    <audio id="player" class="video-js vjs-theme-forest vjs-audio" controls preload="auto">
+                        <source src="/stream/{{ file_path }}" type="{{ content_type }}">
+                        <p class="vjs-no-js">
+                            请启用JavaScript或升级到支持HTML5的浏览器以查看此视频。
+                        </p>
+                    </audio>
+                    <div class="audio-wave-container" id="audioWaveContainer"></div>
+                </div>
+                {% else %}
+                <!-- 视频播放器 -->
+                <div class="video-player-container">
+                    <video id="player" class="video-js vjs-theme-forest vjs-big-play-centered" controls preload="auto" poster="/api/thumbnail/video/{{ file_path }}">
+                        <source src="/view/{{ file_path }}" type="{{ content_type }}" label="原始质量">
+                        <p class="vjs-no-js">
+                            请启用JavaScript或升级到支持HTML5的浏览器以查看此视频。
+                        </p>
+                    </video>
+                    <div class="video-info-overlay" id="videoInfoOverlay">
+                        <span id="resolutionInfo"></span> | <span id="codecInfo"></span>
+                    </div>
+                    <div class="advanced-loading-message" id="advancedLoadingMessage">
+                        智能加载中...
+                    </div>
+                </div>
+                {% endif %}
+                
+ 
+            </div>
+            
+            <div class="controls">
+                <a href="javascript:window.close();" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> 返回
+                </a>
+                <a href="/download/{{ file_path }}" class="btn btn-success">
+                    <i class="fas fa-download"></i> 下载文件
+                </a>
+                <button id="copyLinkBtn" class="btn btn-info" onclick="generateAndCopyLink()">
+                    <i class="fas fa-link"></i> 复制链接
+                </button>
+                <button id="playbackRateBtn" class="btn btn-secondary">
+                    <i class="fas fa-tachometer-alt"></i> 1.0x
+                </button>
+                <button id="externalPlayerBtn" class="btn btn-warning">
+                    <i class="fas fa-external-link-alt"></i> 使用外部播放器
+                </button>
+            </div>
+        </div>
+        
+        <div class="playlist-container">
+            <div class="playlist-title">
+                <i class="fas fa-list"></i> 当前文件夹
+            </div>
+            <div id="playlistItems">
+                <div class="no-files-message">加载中...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- VideoJS和HLS依赖 -->
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.3.0/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels@2.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-http-source-selector@1.1.6/dist/videojs-http-source-selector.min.js"></script>
+    
+    <script> 
+        // 显示加载指示器
+        document.getElementById('loadingIndicator').style.display = 'block';
+
+        // 获取当前文件夹内的媒体文件
+        const currentFilePath = "{{ file_path }}";
+        const folderPath = currentFilePath.substring(0, currentFilePath.lastIndexOf('/'));
+        let player = null;
+        
+        // 加载播放列表
+        async function loadPlaylist() {
+            try {
+                const response = await fetch(`/api/files?path=${encodeURIComponent(folderPath)}`);
+                const data = await response.json();
+                console.log('文件列表:', data);
+                if (!response.ok) {
+                    throw new Error(data.detail || "获取文件列表失败");
+                }
+                
+                const playlistContainer = document.getElementById('playlistItems');
+                
+                // 使用新的JSON结构中的媒体类型分类
+                const mediaFiles = [];
+                
+                // 添加视频文件
+                if (data.categories && data.categories.videos) {
+                    mediaFiles.push(...data.categories.videos);
+                }
+                
+                // 添加音频文件
+                if (data.categories && data.categories.audios) {
+                    mediaFiles.push(...data.categories.audios);
+                }
+                
+                if (mediaFiles.length === 0) {
+                    playlistContainer.innerHTML = '<div class="no-files-message">没有找到其他媒体文件</div>';
+                    return;
+                }
+                function processPath(path) {
+                    // 先按照反斜杠分割，取最后一个部分
+                    const lastPart = path.split('\\').pop();
+                    
+                    // 在最后一部分中，保留最后一个正斜杠和其前面的内容
+                    if (path.includes('/')) {
+                        const lastSlashIndex = path.lastIndexOf('/');
+                        const prefix = path.substring(0, lastSlashIndex + 1);
+                        const filename = lastPart;
+                        return prefix + filename;
+                    } else {
+                        return lastPart;
+                    }
+                }
+                // 构建播放列表
+                let playlistHTML = '';
+                mediaFiles.forEach(file => {
+                    const isCurrentFile = (folderPath + '/' + file.name) === currentFilePath;
+                    // 使用文件对象中的is_audio属性来确定图标
+                    const fileIcon = file.is_audio ? 'fa-music' : 'fa-video';
+                    
+                    playlistHTML += `
+                        <div class="playlist-item ${isCurrentFile ? 'active' : ''}" 
+                            data-path="${folderPath}/${file.path}">
+                            <div class="playlist-item-icon">
+                                <i class="fas ${fileIcon}"></i>
+                            </div>
+                            <div class="playlist-item-name">${file.name}</div>
+                        </div>
+                    `;
+                });
+                
+                playlistContainer.innerHTML = playlistHTML;
+        
+                // 添加点击事件
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const path = this.getAttribute('data-path');
+                        if (path !== currentFilePath) {
+                            if(path.includes('\\')){
+                                let paths = processPath(path)
+                                console.log('切换到:', paths);
+                                window.location.href = `/play/${encodeURIComponent(paths)}`;
+                            }
+                            else{
+                                console.log('切换到:', path);
+                                window.location.href = `/play${encodeURIComponent(path)}`;
+                            }
+                        }
+                    });
+                });
+                
+            } catch (error) {
+                console.error('加载播放列表失败:', error);
+                document.getElementById('playlistItems').innerHTML = 
+                    `<div class="no-files-message">加载文件列表失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 初始化高级视频播放器
+        document.addEventListener('DOMContentLoaded', function() {
+    // 加载播放列表
+    loadPlaylist();
+    
+    // 隐藏加载指示器
+    document.getElementById('loadingIndicator').style.display = 'none';
+    
+    // 初始化视频播放器，使用更简洁的配置
+    player = videojs('player', {
+        fluid: true,
+        html5: {
+            vhs: {
+                overrideNative: !videojs.browser.IS_SAFARI,
+                maxBufferLength: 30,            // 缓冲区大小(秒)
+                maxMaxBufferLength: 600,        // 最大缓冲区大小(秒)
+                enableLowInitialPlaylist: true, // 初始低质量，然后提升
+            },
+            nativeAudioTracks: false,
+            nativeVideoTracks: false
+        },
+        // 控制栏配置保持不变
+        controlBar: {
+            children: [
+                'playToggle',
+                'volumePanel',
+                'currentTimeDisplay',
+                'timeDivider',
+                'durationDisplay',
+                'progressControl',
+                'remainingTimeDisplay',
+                'playbackRateMenuButton',
+                'pictureInPictureToggle',
+                'fullscreenToggle'
+            ]
+        },
+        preload: 'auto',
+        autoplay: false,
+        playbackRates: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+    });
+    
+    // 最小化的事件监听
+    player.on('loadstart', function() { showBufferingIndicator(); });
+    player.on('loadedmetadata', function() { hideBufferingIndicator(); });
+    player.on('waiting', function() { showBufferingIndicator(); });
+    player.on('playing', function() { hideBufferingIndicator(); });
+    player.on('error', function(e) {
+        console.error('播放器错误:', player.error());
+        
+        // 显示友好的错误消息
+        const networkStatus = document.getElementById('networkStatus');
+        const loadingStats = document.getElementById('loadingStats');
+        const retryButton = document.getElementById('retryButton');
+        
+        if (networkStatus && loadingStats) {
+            networkStatus.style.display = 'block';
+            loadingStats.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 播放错误: ${getErrorDescription(player.error().code)}`;
+            if (retryButton) retryButton.style.display = 'inline-block';
+        }
+        
+        // 回退到流式API
+        player.src({
+            src: `/stream/{{ file_path }}`,
+            type: "{{ content_type }}"
+        });
+        player.load();
+        player.play().catch(e => console.warn('自动播放失败:', e));
+    });
+    
+    // 播放速率按钮
+    const playbackRateBtn = document.getElementById('playbackRateBtn');
+    if (playbackRateBtn) {
+        let playbackRates = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+        let currentRateIndex = 2; // 默认1.0x
+        
+        playbackRateBtn.addEventListener('click', function() {
+            currentRateIndex = (currentRateIndex + 1) % playbackRates.length;
+            const newRate = playbackRates[currentRateIndex];
+            player.playbackRate(newRate);
+            playbackRateBtn.innerHTML = `<i class="fas fa-tachometer-alt"></i> ${newRate}x`;
+        });
+    }
+    
+    // 外部播放器按钮
+    const externalPlayerBtn = document.getElementById('externalPlayerBtn');
+    if (externalPlayerBtn) {
+        externalPlayerBtn.addEventListener('click', openInExternalPlayer);
+    }
+    
+    // 重试按钮
+    const retryButton = document.getElementById('retryButton');
+    if (retryButton) {
+        retryButton.addEventListener('click', function() {
+            const networkStatus = document.getElementById('networkStatus');
+            if (networkStatus) networkStatus.style.display = 'none';
+            retryButton.style.display = 'none';
+            
+            player.reset();
+            player.src({
+                src: `/view/{{ file_path }}`,
+                type: "{{ content_type }}"
+            });
+            player.load();
+            player.play().catch(e => console.error('播放失败:', e));
+        });
+    }
+    
+    // 加载背景设置
+    loadBackgroundSettings();
+});   
+        // 初始化标准播放器
+        function initStandardPlayer() {
+            // 尝试启用MSE如果可用
+            if ('MediaSource' in window) {
+                console.log('使用MSE增强播放能力');
+                // MediaSource配置可以在这里添加
+            }
+            
+            // 检测并显示编解码器信息
+            if (document.getElementById('codecInfo')) {
+                const videoElement = document.getElementById('player');
+                const videoSrc = videoElement.querySelector('source').src;
+                document.getElementById('codecInfo').textContent = getCodecInfo(videoSrc);
+            }
+            
+            // 添加音量恢复功能
+            restoreVolumeSettings();
+        }
+        
+        function initFallbackPlayer() {
+    console.log('启动备用播放方案');
+    showNetworkError('正在尝试备用播放方案...');
+    
+    const videoElement = document.getElementById('player');
+    const originalSrc = videoElement.querySelector('source').src;
+    const filePath = "{{ file_path }}";
+    
+    // 检测浏览器支持的编解码器和容器
+    const browserCapabilities = detectBrowserCapabilities();
+    console.log('浏览器媒体支持能力:', browserCapabilities);
+    
+    // 文件格式检测
+    const fileFormat = detectFileFormat(filePath, originalSrc);
+    console.log('检测到文件格式:', fileFormat);
+    
+    // 备用播放顺序
+    const fallbackSources = [
+        // 1. 直接流 - 使用Range请求
+        {
+            src: `/stream/{{ file_path }}`,
+            type: '{{ content_type }}'
+        },
+        // 2. 尝试不同格式 - 可能启用服务器端转码
+        {
+            src: `/stream/{{ file_path }}?format=mp4&quality=normal`,
+            type: 'video/mp4'
+        },
+        // 3. 直接访问文件
+        {
+            src: `/view/{{ file_path }}?direct=1`,
+            type: '{{ content_type }}'
+        },
+        // 4. 最低质量版本 - 确保兼容性
+        {
+            src: `/stream/{{ file_path }}?quality=low&compatibility=high`,
+            type: 'video/mp4'
+        }
+    ];
+    
+    // 尝试播放第一个源
+    tryPlaySource(fallbackSources, 0);
+}
+
+// 尝试播放源
+function tryPlaySource(sources, index) {
+    if (index >= sources.length) {
+        // 所有源都已尝试，推荐使用外部播放器
+        console.error('所有播放源均已尝试，建议使用外部播放器');
+        showNetworkError('此视频可能无法在浏览器中播放，建议使用外部播放器');
+        document.getElementById('externalPlayerBtn').style.animation = 'pulse 1.5s infinite';
+        return;
+    }
+    
+    const source = sources[index];
+    console.log(`尝试播放源 ${index+1}/${sources.length}: ${source.src}`);
+    showAdvancedLoadingMessage(`尝试备用播放源 ${index+1}...`);
+    
+    // 设置播放源
+    player.src(source);
+    player.load();
+    
+    // 监听事件
+    const playStartTimeout = setTimeout(() => {
+        // 如果5秒后还没开始播放，尝试下一个源
+        if (player.readyState() < 3 && !player.paused()) {
+            console.log(`源 ${index+1} 未能在预期时间内开始播放，尝试下一个源`);
+            tryPlaySource(sources, index + 1);
+        }
+    }, 5000);
+    
+    player.one('playing', function() {
+        clearTimeout(playStartTimeout);
+        console.log(`源 ${index+1} 播放成功`);
+        hideNetworkError();
+    });
+    
+    player.one('error', function() {
+        clearTimeout(playStartTimeout);
+        console.error(`源 ${index+1} 播放失败: ${player.error().code}`);
+        tryPlaySource(sources, index + 1);
+    });
+    
+    // 尝试播放
+    player.play().catch(e => console.warn('播放源启动失败:', e));
+}
+// 检测浏览器媒体支持能力
+function detectBrowserCapabilities() {
+    const capabilities = {
+        hls: false,
+        dash: false,
+        h264: false,
+        h265: false,
+        vp9: false,
+        av1: false,
+        webm: false,
+        mp4: false,
+        ogg: false,
+        mkv: false
+    };
+    
+    const videoElement = document.createElement('video');
+    
+    // 检测容器格式支持
+    capabilities.mp4 = videoElement.canPlayType('video/mp4') !== '';
+    capabilities.webm = videoElement.canPlayType('video/webm') !== '';
+    capabilities.ogg = videoElement.canPlayType('video/ogg') !== '';
+    
+    // 检测编解码器支持
+    capabilities.h264 = videoElement.canPlayType('video/mp4; codecs="avc1.42E01E"') !== '';
+    capabilities.h265 = videoElement.canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"') !== '';
+    capabilities.vp9 = videoElement.canPlayType('video/webm; codecs="vp9"') !== '';
+    capabilities.av1 = videoElement.canPlayType('video/mp4; codecs="av01.0.05M.08"') !== '';
+    
+    // 检测流媒体协议支持
+    capabilities.hls = 'MediaSource' in window && videoElement.canPlayType('application/vnd.apple.mpegurl') !== '';
+    capabilities.dash = 'MediaSource' in window;
+    
+    // 检测是否为Safari浏览器(对HLS有原生支持)
+    capabilities.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    // 检测是否安装了常见的视频扩展 
+    try {
+        capabilities.hlsJs = typeof Hls !== 'undefined';
+    } catch (e) {
+        capabilities.hlsJs = false;
+    }
+    
+    return capabilities;
+}
+
+// 根据文件路径和源URL检测文件格式
+function detectFileFormat(filePath, srcUrl) {
+    const format = {
+        container: 'unknown',
+        codec: 'unknown',
+        isHightQuality: false,
+        extension: ''
+    };
+    
+    // 从文件路径提取扩展名
+    const fileExt = filePath.split('.').pop().toLowerCase();
+    format.extension = fileExt;
+    
+    // 检测容器格式
+    if (['mp4', 'm4v'].includes(fileExt)) {
+        format.container = 'mp4';
+    } else if (['webm'].includes(fileExt)) {
+        format.container = 'webm';
+    } else if (['ogg', 'ogv'].includes(fileExt)) {
+        format.container = 'ogg';
+    } else if (['mkv'].includes(fileExt)) {
+        format.container = 'mkv';
+    } else if (['avi'].includes(fileExt)) {
+        format.container = 'avi';
+    } else if (['mov', 'qt'].includes(fileExt)) {
+        format.container = 'quicktime';
+    } else if (['flv'].includes(fileExt)) {
+        format.container = 'flv';
+    } else if (['wmv'].includes(fileExt)) {
+        format.container = 'wmv';
+    } else if (['m3u8'].includes(fileExt)) {
+        format.container = 'hls';
+    } else if (['mpd'].includes(fileExt)) {
+        format.container = 'dash';
+    }
+    
+    // 尝试从内容类型或URL中检测编解码器
+    const contentType = "{{ content_type }}";
+    
+    if (contentType.includes('avc1') || srcUrl.includes('avc1')) {
+        format.codec = 'h264';
+    } else if (contentType.includes('hev1') || contentType.includes('hevc') || srcUrl.includes('hevc')) {
+        format.codec = 'h265';
+        format.isHightQuality = true;
+    } else if (contentType.includes('av01') || srcUrl.includes('av1')) {
+        format.codec = 'av1';
+        format.isHightQuality = true;
+    } else if (contentType.includes('vp9') || srcUrl.includes('vp9')) {
+        format.codec = 'vp9';
+    } else if (contentType.includes('vp8') || srcUrl.includes('vp8')) {
+        format.codec = 'vp8';
+    } else if (contentType.includes('theora')) {
+        format.codec = 'theora';
+    }
+    
+    // 针对特定容器格式的默认编解码器假设
+    if (format.codec === 'unknown') {
+        if (format.container === 'mp4') {
+            format.codec = 'h264'; // MP4通常包含H.264
+        } else if (format.container === 'webm') {
+            format.codec = 'vp9';  // WebM通常包含VP9
+        } else if (format.container === 'mkv') {
+            format.codec = 'h264'; // MKV经常包含H.264，但也可能是其他编解码器
+            format.isHightQuality = true;
+        }
+    }
+    
+    // 文件尺寸估计 - 根据URL参数或文件名推断
+    if (srcUrl.includes('1080p') || srcUrl.includes('2K') || srcUrl.includes('4K') || 
+        filePath.includes('1080p') || filePath.includes('2K') || filePath.includes('4K')) {
+        format.isHightQuality = true;
+    }
+    
+    return format;
+}
+
+// 根据文件格式和浏览器能力确定最佳播放策略
+function determinePlaybackStrategy(fileFormat, browserCapabilities) {
+    const strategies = [];
+    
+    // 针对不同格式的播放策略优先级
+    
+    // 1. HLS流 - 适用于大多数现代浏览器
+    if (browserCapabilities.hls || browserCapabilities.hlsJs) {
+        strategies.push({
+            name: 'HLS自适应流',
+            priority: 10,
+            url: `/hls/{{ file_path }}/master.m3u8`,
+            options: { useMSE: true }
+        });
+    }
+    
+    // 2. 直接流API - 可能进行服务器端转码
+    strategies.push({
+        name: '直接流模式',
+        priority: 20,
+        url: `/stream/{{ file_path }}`,
+        options: { }
+    });
+    
+    // 3. 针对HEVC/H.265的特殊处理
+    if (fileFormat.codec === 'h265' && !browserCapabilities.h265) {
+        strategies.push({
+            name: 'HEVC转码模式',
+            priority: 15,
+            url: `/stream/{{ file_path }}?transcode=h264`,
+            options: { transcodingHint: true }
+        });
+    }
+    
+    // 4. MKV容器特殊处理
+    if (fileFormat.container === 'mkv') {
+        strategies.push({
+            name: 'MKV专用模式',
+            priority: 5,
+            url: `/stream/{{ file_path }}?extract=true&transcode=1`,
+            options: { containerExtraction: true }
+        });
+    }
+    
+    // 5. 针对AV1的特殊处理
+    if (fileFormat.codec === 'av1' && !browserCapabilities.av1) {
+        strategies.push({
+            name: 'AV1转码模式',
+            priority: 12,
+            url: `/stream/{{ file_path }}?transcode=vp9`,
+            options: { transcodingHint: true }
+        });
+    }
+    
+    // 6. 低质量回退模式
+    strategies.push({
+        name: '低质量兼容模式',
+        priority: 30,
+        url: `/stream/{{ file_path }}?quality=low&compatibility=high`,
+        options: { lowQuality: true }
+    });
+    
+    // 7. 直接文件访问
+    strategies.push({
+        name: '原始文件模式',
+        priority: 40,
+        url: `/view/{{ file_path }}?direct=1`,
+        options: { directFile: true }
+    });
+    
+    // 8. 区块加载模式
+    strategies.push({
+        name: '区块加载模式',
+        priority: 35,
+        url: `/api/raw/{{ file_path }}`,
+        options: { blockLoading: true }
+    });
+    
+    // 9. 对于Safari的特殊处理
+    if (browserCapabilities.isSafari) {
+        strategies.push({
+            name: 'Safari原生HLS模式',
+            priority: 8,
+            url: `/hls/{{ file_path }}/master.m3u8`,
+            options: { useMSE: false }
+        });
+    }
+    
+    // 根据优先级排序策略
+    strategies.sort((a, b) => a.priority - b.priority);
+    
+    // 返回最高优先级的策略
+    return strategies[0];
+}
+
+// 获取备用播放策略
+function getFallbackStrategy(retryCount, fileFormat, browserCapabilities, strategiesAttempted) {
+    // 获取所有可能的策略
+    const allStrategies = [];
+    
+    // 将确定的播放策略添加到列表
+    const baseStrategies = [
+        `/stream/{{ file_path }}?mode=direct`,
+        `/stream/{{ file_path }}?quality=low`,
+        `/view/{{ file_path }}?direct=1`,
+        `/api/raw/{{ file_path }}`,
+        `/stream/{{ file_path }}?transcode=1&format=webm`,
+        `/stream/{{ file_path }}?transcode=h264&container=mp4`
+    ];
+    
+    // 针对特定格式的特殊URL
+    if (fileFormat.container === 'mkv') {
+        baseStrategies.push(`/stream/{{ file_path }}?extract=true&codec=copy`);
+    }
+    
+    if (fileFormat.isHightQuality) {
+        baseStrategies.push(`/stream/{{ file_path }}?quality=480p`);
+    }
+    
+    if (fileFormat.codec === 'h265' || fileFormat.codec === 'av1') {
+        baseStrategies.push(`/stream/{{ file_path }}?transcode=1&compatibility=high`);
+    }
+    
+    // 根据基本URL构建策略对象
+    baseStrategies.forEach((url, index) => {
+        allStrategies.push({
+            name: `备用策略 ${index + 1}`,
+            url: url,
+            options: {}
+        });
+    });
+    
+    // 筛选出未尝试过的策略
+    const availableStrategies = allStrategies.filter(strategy => 
+        !strategiesAttempted.includes(strategy.name));
+    
+    // 如果还有未尝试的策略，返回下一个
+    if (availableStrategies.length > 0) {
+        return availableStrategies[0];
+    }
+    
+    // 如果所有策略都已尝试，返回一个特殊的最终尝试策略
+    return {
+        name: '最终兼容模式',
+        url: `/stream/{{ file_path }}?emergency=1&compatibility=maximum`,
+        options: { emergencyMode: true }
+    };
+}
+
+// 应用播放策略
+function applyPlaybackStrategy(strategy, filePath) {
+    console.log(`应用播放策略: ${strategy.name}, URL: ${strategy.url}`);
+    
+    // 重置播放器源
+    player.src({ src: strategy.url, type: "{{ content_type }}" });
+    
+    // 应用特定策略的选项
+    if (strategy.options.lowQuality) {
+        // 低质量模式设置
+        if (player.tech_ && player.tech_.vhs) {
+            player.tech_.vhs.representations().forEach(rep => {
+                if (rep.height <= 480) {
+                    rep.enabled(true);
+                } else {
+                    rep.enabled(false);
+                }
+            });
+        }
+    }
+    
+    if (strategy.options.transcodingHint) {
+        showAdvancedLoadingMessage('正在转码视频，首次播放可能需要等待...');
+    }
+    
+    if (strategy.options.useMSE === false) {
+        // 对于不使用MSE的策略，修改播放器选项
+        player.options_.html5.vhs.overrideNative = false;
+    }
+    
+    if (strategy.options.emergencyMode) {
+        // 紧急模式设置
+        player.options_.html5.vhs.maxBufferLength = 60;
+        player.options_.html5.vhs.maxMaxBufferLength = 600;
+        player.options_.liveui = false;
+        
+        // 禁用一些高级功能以提高兼容性
+        if (player.tech_ && player.tech_.vhs) {
+            player.tech_.vhs.options_.enableWorker = false;
+        }
+    }
+    
+    // 加载新源
+    player.load();
+    
+    // 尝试播放
+    setTimeout(() => {
+        player.play().catch(e => console.warn('策略播放尝试失败:', e));
+    }, 1000);
+}
+
+// 获取详细的错误描述
+function getDetailedErrorDescription(code, fileFormat) {
+    const baseErrors = {
+        1: '获取媒体失败',
+        2: '网络错误',
+        3: '解码失败',
+        4: '不支持的格式',
+        5: '无法播放加密内容'
+    };
+    
+    let errorMsg = baseErrors[code] || `未知错误 (${code})`;
+    
+    // 根据文件格式添加更详细的错误说明
+    if (code === 4) { // 不支持的格式
+        if (fileFormat.codec === 'h265') {
+            errorMsg += ' - 您的浏览器可能不支持H.265/HEVC编码的视频';
+        } else if (fileFormat.codec === 'av1') {
+            errorMsg += ' - 您的浏览器可能不支持AV1编码的视频';
+        } else if (fileFormat.container === 'mkv') {
+            errorMsg += ' - MKV容器格式可能需要特殊支持';
+        }
+    } else if (code === 3) { // 解码失败
+        if (fileFormat.isHightQuality) {
+            errorMsg += ' - 视频质量可能过高，尝试降低质量';
+        }
+    } else if (code === 2) { // 网络错误
+        errorMsg += ' - 请检查您的网络连接或尝试降低视频质量';
+    }
+    
+    return errorMsg;
+}
+        
+        // 使用外部播放器
+        async function openInExternalPlayer() {
+    try {
+        // 获取直链
+        const response = await fetch(`/api/direct-link/{{ file_path }}`);
+        const result = await response.json();
+        let fullUrl = result.full_link;
+        console.log('尝试使用外部播放器打开:', fullUrl);
+
+        // 确保URL正确编码
+        if (!fullUrl.startsWith('http')) {
+            fullUrl = window.location.protocol + '//' + fullUrl;
+        }
+
+        // 检测操作系统
+        const platform = navigator.platform.toLowerCase();
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMac = platform.includes('mac');
+        const isWindows = platform.includes('win');
+        const isLinux = platform.includes('linux');
+        const isAndroid = userAgent.includes('android');
+        const isIOS = /ipad|iphone|ipod/.test(userAgent) && !window.MSStream;
+
+        // 根据不同平台提供不同的启动协议
+        let launchMethods = [];
+
+        if (isWindows) {
+            launchMethods = [
+                { name: 'PotPlayer', url: `potplayer://${encodeURIComponent(fullUrl)}` },
+                { name: 'VLC', url: `vlc://${encodeURIComponent(fullUrl)}` },
+                { name: 'MPC-HC', url: `mpc-hc://${encodeURIComponent(fullUrl)}` },
+                // 命令行启动方法
+                { 
+                    name: 'Windows命令行',
+                    action: () => {
+                        const cmdText = `start "" "${fullUrl}"`;
+                        copyToClipboard(cmdText);
+                        alert('已复制命令行启动命令到剪贴板，请在命令行中粘贴并运行');
+                    }
+                }
+            ];
+        } else if (isMac) {
+            launchMethods = [
+                { name: 'IINA', url: `iina://${encodeURIComponent(fullUrl)}` },
+                { name: 'VLC', url: `vlc://${encodeURIComponent(fullUrl)}` },
+                { name: 'QuickTime', url: `quicktime://${encodeURIComponent(fullUrl)}` },
+                // 命令行启动方法
+                { 
+                    name: 'macOS Terminal',
+                    action: () => {
+                        const cmdText = `open "${fullUrl}"`;
+                        copyToClipboard(cmdText);
+                        alert('已复制命令行启动命令到剪贴板，请在终端中粘贴并运行');
+                    }
+                }
+            ];
+        } else if (isLinux) {
+            launchMethods = [
+                { name: 'VLC', url: `vlc://${encodeURIComponent(fullUrl)}` },
+                { name: 'MPV', url: `mpv://${encodeURIComponent(fullUrl)}` },
+                // 命令行启动方法
+                { 
+                    name: 'Linux Terminal',
+                    action: () => {
+                        const cmdText = `xdg-open "${fullUrl}"`;
+                        copyToClipboard(cmdText);
+                        alert('已复制命令行启动命令到剪贴板，请在终端中粘贴并运行');
+                    }
+                }
+            ];
+        } else if (isAndroid) {
+            launchMethods = [
+                { name: 'MX Player', url: `intent:${fullUrl}#Intent;package=com.mxtech.videoplayer.ad;S.title={{ file_name }};end` },
+                { name: 'VLC', url: `intent:${fullUrl}#Intent;package=org.videolan.vlc;end` },
+                { name: '下载视频', url: `/download/{{ file_path }}` }
+            ];
+        } else if (isIOS) {
+            launchMethods = [
+                { name: 'VLC', url: `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(fullUrl)}` },
+                { name: 'Infuse', url: `infuse://x-callback-url/play?url=${encodeURIComponent(fullUrl)}` },
+                { name: '下载视频', url: `/download/{{ file_path }}` }
+            ];
+        }
+
+        // 创建播放器选择界面
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        modal.style.zIndex = '9999';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = '#fff';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '10px';
+        modalContent.style.maxWidth = '500px';
+        modalContent.style.width = '80%';
+
+        const title = document.createElement('h3');
+        title.textContent = '选择外部播放器';
+        title.style.marginBottom = '20px';
+        title.style.borderBottom = '1px solid #eee';
+        title.style.paddingBottom = '10px';
+        modalContent.appendChild(title);
+
+        // 创建复制链接选项
+        const copyLinkDiv = document.createElement('div');
+        copyLinkDiv.style.padding = '10px';
+        copyLinkDiv.style.marginBottom = '10px';
+        copyLinkDiv.style.border = '1px solid #eee';
+        copyLinkDiv.style.borderRadius = '5px';
+        copyLinkDiv.style.cursor = 'pointer';
+        copyLinkDiv.style.display = 'flex';
+        copyLinkDiv.style.alignItems = 'center';
+        copyLinkDiv.style.justifyContent = 'space-between';
+
+        const copyLinkText = document.createElement('span');
+        copyLinkText.textContent = '复制视频直链';
+        copyLinkDiv.appendChild(copyLinkText);
+
+        const copyLinkButton = document.createElement('button');
+        copyLinkButton.textContent = '复制';
+        copyLinkButton.style.backgroundColor = '#007bff';
+        copyLinkButton.style.color = 'white';
+        copyLinkButton.style.border = 'none';
+        copyLinkButton.style.padding = '5px 10px';
+        copyLinkButton.style.borderRadius = '3px';
+        copyLinkButton.style.cursor = 'pointer';
+        copyLinkButton.onclick = function(e) {
+            e.stopPropagation();
+            copyToClipboard(fullUrl);
+            copyLinkButton.textContent = '已复制';
+            setTimeout(() => { copyLinkButton.textContent = '复制'; }, 2000);
+        };
+        copyLinkDiv.appendChild(copyLinkButton);
+        modalContent.appendChild(copyLinkDiv);
+
+        // 创建播放器列表
+        launchMethods.forEach(method => {
+            const playerDiv = document.createElement('div');
+            playerDiv.style.padding = '10px';
+            playerDiv.style.marginBottom = '10px';
+            playerDiv.style.border = '1px solid #eee';
+            playerDiv.style.borderRadius = '5px';
+            playerDiv.style.cursor = 'pointer';
+            playerDiv.textContent = method.name;
+            playerDiv.onclick = function() {
+                if (method.action) {
+                    method.action();
+                } else if (method.url) {
+                    window.location.href = method.url;
+                }
+                document.body.removeChild(modal);
+            };
+            modalContent.appendChild(playerDiv);
+        });
+
+        // 添加关闭按钮
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '取消';
+        closeButton.style.backgroundColor = '#6c757d';
+        closeButton.style.color = 'white';
+        closeButton.style.border = 'none';
+        closeButton.style.padding = '10px';
+        closeButton.style.width = '100%';
+        closeButton.style.borderRadius = '5px';
+        closeButton.style.marginTop = '10px';
+        closeButton.style.cursor = 'pointer';
+        closeButton.onclick = function() {
+            document.body.removeChild(modal);
+        };
+        modalContent.appendChild(closeButton);
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error("获取播放链接失败:", error);
+        alert("获取播放链接失败，请检查网络或文件路径:\n" + error.message);
+    }
+}
+        // 复制链接功能
+        async function generateAndCopyLink() {
+            try {
+                const response = await fetch(`/api/direct-link/{{ file_path }}`);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || '生成链接失败');
+                
+                // 尝试复制到剪贴板
+                const linkText = result.full_link;
+                if (copyToClipboard(linkText)) {
+                    alert('链接已复制到剪贴板');
+                } else {
+                    alert(`链接生成成功，请手动复制: ${linkText}`);
+                }
+            } catch (error) {
+                alert(`生成链接失败: ${error.message}`);
+            }
+        }
+        
+        // 复制到剪贴板的函数
+        function copyToClipboard(text) {
+            // 尝试使用现代Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).catch(err => {
+                    console.warn('Clipboard API failed:', err);
+                });
+                return true;
+            }
+            
+            // 备用方法
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return successful;
+            } catch (err) {
+                console.error('复制失败:', err);
+                return false;
+            }
+        }
+        
+        // 显示缓冲指示器
+        function showBufferingIndicator() {
+            document.getElementById('bufferingIndicator').style.display = 'block';
+        }
+        
+        // 隐藏缓冲指示器
+        function hideBufferingIndicator() {
+            document.getElementById('bufferingIndicator').style.display = 'none';
+        }
+        
+        // 显示网络错误
+        function showNetworkError(message) {
+            const networkStatus = document.getElementById('networkStatus');
+            const loadingStats = document.getElementById('loadingStats');
+            const retryButton = document.getElementById('retryButton');
+            
+            networkStatus.style.display = 'block';
+            loadingStats.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            retryButton.style.display = 'inline-block';
+        }
+        
+        // 隐藏网络错误
+        function hideNetworkError() {
+            document.getElementById('networkStatus').style.display = 'none';
+            document.getElementById('retryButton').style.display = 'none';
+        }
+        
+        // 显示高级加载消息
+        function showAdvancedLoadingMessage(message) {
+            const loadingMessage = document.getElementById('advancedLoadingMessage');
+            if (loadingMessage) {
+                loadingMessage.textContent = message;
+                loadingMessage.style.display = 'block';
+                
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    loadingMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // 获取错误描述
+        function getErrorDescription(code) {
+            const errors = {
+                1: '获取媒体失败',
+                2: '网络错误',
+                3: '解码失败',
+                4: '不支持的格式',
+                5: '无法播放加密内容'
+            };
+            
+            return errors[code] || `未知错误 (${code})`;
+        }
+        
+        // 设置智能预加载
+        function setupIntelligentPreload() {
+            if (!player) return;
+            
+            const videoElement = player.el().querySelector('video');
+            if (!videoElement) return;
+            
+            // 预加载接下来的片段
+            const preloadNextSegment = function() {
+                if (player.paused() || !videoElement.duration) return;
+                
+                const currentTime = videoElement.currentTime;
+                const duration = videoElement.duration;
+                
+                // 计算预加载点 - 当前位置后30秒
+                const preloadPoint = currentTime + 30;
+                
+                // 如果预加载点小于总时长，且当前还没有缓冲到该点
+                if (preloadPoint < duration && !isTimeBuffered(preloadPoint)) {
+                    console.log(`预加载位置: ${preloadPoint}秒`);
+                    
+                    // 创建Range请求来预加载
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', `/stream/{{ file_path }}?t=${preloadPoint}`, true);
+                    xhr.setRequestHeader('Range', `bytes=${Math.floor(preloadPoint * 100000)}-${Math.floor(preloadPoint * 100000) + 1000000}`);
+                    xhr.responseType = 'arraybuffer';
+                    xhr.send();
+                    
+                    // 10秒后中止请求
+                    setTimeout(() => {
+                        if (xhr.readyState !== 4) {
+                            xhr.abort();
+                        }
+                    }, 10000);
+                }
+            };
+            
+            // 每10秒检查一次是否需要预加载
+            setInterval(preloadNextSegment, 10000);
+        }
+        
+        // 检查时间点是否已缓冲
+        function isTimeBuffered(time) {
+            if (!player) return false;
+            
+            const videoElement = player.el().querySelector('video');
+            if (!videoElement || !videoElement.buffered) return false;
+            
+            for (let i = 0; i < videoElement.buffered.length; i++) {
+                if (time >= videoElement.buffered.start(i) && time <= videoElement.buffered.end(i)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // 检查是否为大文件
+        function isLargeFile() {
+            if (!player) return false;
+            
+            const videoElement = player.el().querySelector('video');
+            return videoElement && videoElement.duration > 1800; // 30分钟以上视为大文件
+        }
+        
+        // 动态缓冲管理
+        function dynamicBufferManagement() {
+            if (!player) return;
+            
+            // 当播放大文件时的缓冲优化
+            if ('MediaSource' in window && player.techName_ === 'Html5') {
+                const tech = player.tech_;
+                
+                if (tech && tech.vhs) {
+                    // 调整VHS/HLS缓冲参数
+                    tech.vhs.options_.maxBufferLength = 30;  // 较短的缓冲以快速启动
+                    tech.vhs.options_.maxMaxBufferLength = 600;  // 大的总缓冲区以减少网络请求
+                    
+                    console.log('已优化大文件缓冲策略');
+                }
+            }
+        }
+        
+        // 网络监控设置
+        function setupNetworkMonitoring() {
+            if ('connection' in navigator) {
+                const connection = navigator.connection;
+                
+                // 网络变化时的处理
+                connection.addEventListener('change', function() {
+                    console.log(`网络变化: ${connection.effectiveType}, 下行速度: ${connection.downlink}Mbps`);
+                    
+                    // 对低速网络的特殊处理
+                    if (connection.downlink < 2) {
+                        showAdvancedLoadingMessage('检测到网络速度较慢，已优化播放策略');
+                        
+                        // 如果支持HLS，切换到低码率
+                        if (player && player.tech_ && player.tech_.vhs) {
+                            player.tech_.vhs.representations().forEach(function(rep) {
+                                if (rep.height <= 480) {
+                                    rep.enabled(true);
+                                } else {
+                                    rep.enabled(false);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 全屏优化
+        function optimizeForFullscreen() {
+            if (!player) return;
+            
+            showAdvancedLoadingMessage('全屏模式，已优化视频质量');
+            
+            // 在全屏模式下使用高质量
+            if (player.tech_ && player.tech_.vhs) {
+                setTimeout(() => {
+                    // 延迟一秒再切换到高质量，避免卡顿
+                    player.tech_.vhs.representations().forEach(function(rep) {
+                        rep.enabled(true);  // 启用所有质量级别
+                    });
+                }, 1000);
+            }
+        }
+        
+        // 检查视频是否完全可见
+        function isFullyVisible() {
+            if (!player) return false;
+            
+            const videoElement = player.el();
+            const rect = videoElement.getBoundingClientRect();
+            
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= window.innerHeight &&
+                rect.right <= window.innerWidth
+            );
+        }
+        
+        // 移动设备优化
+        function setupMobileOptimization() {
+            // 移动设备特殊处理
+            if (!player) return;
+            
+            // 默认音量较低避免惊吓
+            player.volume(0.7);
+            
+            // 自动质量调整为中等
+            if (player.tech_ && player.tech_.vhs) {
+                player.tech_.vhs.representations().forEach(function(rep) {
+                    if (rep.height > 720) {
+                        rep.enabled(false);
+                    } else {
+                        rep.enabled(true);
+                    }
+                });
+            }
+        }
+        
+        // 检测是否为移动设备
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // 保存和恢复音量设置
+        function restoreVolumeSettings() {
+            if (!player) return;
+            
+            // 从localStorage恢复音量
+            const savedVolume = localStorage.getItem('playerVolume');
+            if (savedVolume !== null) {
+                player.volume(parseFloat(savedVolume));
+            }
+            
+            // 保存音量设置
+            player.on('volumechange', function() {
+                localStorage.setItem('playerVolume', player.volume());
+            });
+        }
+        
+        // 更新视频统计信息
+        function updateVideoStats() {
+            if (!player) return;
+            
+            const videoElement = player.el().querySelector('video');
+            if (!videoElement) return;
+            
+            // 获取并显示视频信息
+            if (document.getElementById('resolutionInfo') && videoElement.videoWidth && videoElement.videoHeight) {
+                document.getElementById('resolutionInfo').textContent = 
+                    `${videoElement.videoWidth}x${videoElement.videoHeight}`;
+            }
+            
+            // 检测并更新HDR信息
+            try {
+                if (videoElement.getVideoPlaybackQuality) {
+                    const quality = videoElement.getVideoPlaybackQuality();
+                    console.log('视频播放质量:', quality);
+                }
+            } catch (e) {
+                console.warn('获取视频质量信息失败:', e);
+            }
+        }
+        
+        // 获取编解码器信息
+        function getCodecInfo(url) {
+    // 尝试从URL或MIME类型推断编解码器
+            const mimeType = "{{ content_type }}";
+            
+            if (mimeType.includes('avc1') || url.includes('avc1')) {
+                return 'H.264/AVC';
+            } else if (mimeType.includes('hev1') || mimeType.includes('hevc') || url.includes('hevc')) {
+                return 'H.265/HEVC';
+            } else if (mimeType.includes('av01') || url.includes('av1')) {
+                return 'AV1';
+            } else if (mimeType.includes('mp4')) {
+                return 'H.264/AVC';
+            } else if (mimeType.includes('mkv') || url.includes('.mkv')) {
+                return 'MKV容器 (需要浏览器支持)';
+            } else if (mimeType.includes('webm')) {
+                return 'VP8/VP9 WebM';
+            } else if (mimeType.includes('ogg') || mimeType.includes('opus')) {
+                return 'Ogg/Opus';
+            } else {
+                return '标准编码';
+            }
+        }
+        
+        // 加载背景设置
+        async function loadBackgroundSettings() {
+            try {
+                // 从服务器加载背景设置
+                const response = await fetch('/api/background');
+                if (!response.ok) throw new Error('获取背景设置失败');
+                
+                const data = await response.json();
+                
+                // 设置当前背景
+                if (data.current_background) {
+                    document.body.style.backgroundImage = `url('${data.current_background}')`;
+                    // 分析背景亮度并适配样式
+                    adjustStylesForBackground(data.current_background);
+                }
+            } catch (error) {
+                console.error('加载背景设置失败:', error);
+            }
+        }
+        
+        // 根据背景图片亮度调整样式
+        function adjustStylesForBackground(url) {
+            if (!url) {
+                // 无背景时恢复默认样式
+                document.documentElement.classList.remove('dark-background');
+                document.documentElement.classList.remove('light-background');
+                return;
+            }
+            
+            // 创建一个临时图像元素来分析背景
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = function() {
+                // 创建Canvas来分析图像
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = this.width;
+                canvas.height = this.height;
+                ctx.drawImage(this, 0, 0);
+                
+                // 获取中心区域的图像数据来分析亮度
+                const imageData = ctx.getImageData(
+                    Math.floor(this.width / 4), 
+                    Math.floor(this.height / 4), 
+                    Math.floor(this.width / 2), 
+                    Math.floor(this.height / 2)
+                );
+                
+                // 计算平均亮度
+                let totalBrightness = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    
+                    // 加权亮度计算方式
+                    const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                    totalBrightness += brightness;
+                }
+                
+                const avgBrightness = totalBrightness / (imageData.data.length / 4);
+                console.log('背景平均亮度:', avgBrightness);
+                
+                // 根据亮度调整样式
+                if (avgBrightness < 0.5) {
+                    // 深色背景
+                    document.documentElement.classList.add('dark-background');
+                    document.documentElement.classList.remove('light-background');
+                } else {
+                    // 浅色背景
+                    document.documentElement.classList.add('light-background');
+                    document.documentElement.classList.remove('dark-background');
+                }
+            };
+            
+            img.onerror = function() {
+                console.error('背景图片加载失败，无法分析亮度');
+            };
+            
+            img.src = url;
+        }
+        
+        // 在文档加载完成后加载背景
+        document.addEventListener('DOMContentLoaded', function() {
+            // 保留现有的DOMContentLoaded函数内容
+            loadBackgroundSettings();
+        });
+
+
+        function implementUniversalPlaybackStrategy() {
+    // 检测浏览器支持的编解码器
+    const videoElement = document.createElement('video');
+    const supportedFormats = {
+        h264: videoElement.canPlayType('video/mp4; codecs="avc1.42E01E"') !== '',
+        h265: videoElement.canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"') !== '',
+        vp9: videoElement.canPlayType('video/webm; codecs="vp9"') !== '',
+        av1: videoElement.canPlayType('video/mp4; codecs="av01.0.05M.08"') !== '',
+        webm: videoElement.canPlayType('video/webm') !== '',
+        hls: videoElement.canPlayType('application/vnd.apple.mpegurl') !== '',
+    };
+    
+    // 当前文件信息
+    const currentPath = "{{ file_path }}";
+    const fileExtension = currentPath.split('.').pop().toLowerCase();
+    
+    console.log('浏览器支持的格式:', supportedFormats);
+    console.log('当前文件格式:', fileExtension);
+    
+    // 根据文件格式和浏览器支持选择最佳播放策略
+    let playbackUrl = `/view/{{ file_path }}`;
+    let needConversion = false;
+    
+    // 确定是否需要转码
+    if (['mkv', 'avi', 'flv', 'wmv', 'mov'].includes(fileExtension)) {
+        needConversion = true;
+    } else if (fileExtension === 'mp4' && !supportedFormats.h264) {
+        needConversion = true;
+    } else if (fileExtension === 'webm' && !supportedFormats.webm) {
+        needConversion = true;
+    }
+    
+    // 选择播放策略
+    if (needConversion) {
+        console.log('需要转码以保证兼容性');
+        // 使用转码API
+        playbackUrl = `/transcode/{{ file_path }}?format=mp4&codec=h264`;
+        
+        showAdvancedLoadingMessage('正在转换视频格式，首次播放可能需要等待...');
+        
+        player.src({
+            src: playbackUrl,
+            type: 'video/mp4'
+        });
+    } else {
+        // 根据浏览器能力选择最佳策略
+        if (fileExtension === 'mp4' || supportedFormats.h264) {
+            // 对于标准MP4使用分块传输
+            playbackUrl = `/stream/{{ file_path }}`;
+            player.src({
+                src: playbackUrl,
+                type: '{{ content_type }}'
+            });
+        } else {
+            // 默认情况下尝试直接播放
+            player.src({
+                src: playbackUrl,
+                type: '{{ content_type }}'
+            });
+        }
+    }
+    
+    // 注册高级事件监听
+    setupAdvancedErrorHandling();
+    
+    // 超时检测 - 如果30秒内未开始播放则尝试转码版本
+    let playStarted = false;
+    player.one('playing', function() {
+        playStarted = true;
+    });
+    
+    setTimeout(function() {
+        if (!playStarted && !player.paused()) {
+            console.log('播放未在预期时间内开始，尝试转码版本');
+            player.src({
+                src: `/transcode/{{ file_path }}?format=mp4&codec=h264`,
+                type: 'video/mp4'
+            });
+            player.load();
+            player.play();
+        }
+    }, 30000);
+}
+
+// 设置高级错误处理
+function setupAdvancedErrorHandling() {
+    let errorCount = 0;
+    
+    // 播放错误时的递进式处理策略
+    player.on('error', function() {
+        errorCount++;
+        console.log(`播放错误 #${errorCount}: ${player.error().message}`);
+        
+        // 根据错误次数采用不同的恢复策略
+        if (errorCount === 1) {
+            // 第一次错误: 使用stream API
+            console.log('尝试使用stream API');
+            player.src({
+                src: `/stream/{{ file_path }}`,
+                type: '{{ content_type }}'
+            });
+        } else if (errorCount === 2) {
+            // 第二次错误: 使用转码版本
+            console.log('尝试转码版本');
+            showAdvancedLoadingMessage('正在准备转码版本，请稍候...');
+            player.src({
+                src: `/transcode/{{ file_path }}?format=mp4&codec=h264`,
+                type: 'video/mp4'
+            });
+        } else if (errorCount >= 3) {
+            // 第三次错误: 提示使用外部播放器
+            console.log('建议使用外部播放器');
+            showNetworkError('此视频可能无法在浏览器中正常播放，建议使用外部播放器');
+            
+            // 突出显示外部播放器按钮
+            document.getElementById('externalPlayerBtn').style.animation = 'pulse 1.5s infinite';
+            document.getElementById('externalPlayerBtn').style.backgroundColor = '#dc3545';
+            document.getElementById('externalPlayerBtn').style.color = 'white';
+        }
+        
+        player.load();
+        player.play().catch(e => console.warn('自动播放失败:', e));
+    });
+}
+
+function setupUniversalPlayback() {
+    // 综合利用所有播放策略，按优先级尝试
+    const strategies = [
+        {
+            name: "HLS流播放",
+            condition: () => player && 'MediaSource' in window,
+            setup: () => {
+                console.log("尝试使用HLS自适应流...");
+                player.src({
+                    src: `/hls/{{ file_path }}/master.m3u8`,
+                    type: "application/vnd.apple.mpegurl"
+                });
+                
+                showAdvancedLoadingMessage('正在准备自适应流...');
+                
+                // 使用Hls.js处理HLS流
+                if (Hls.isSupported()) {
+                    const hls = new Hls({
+                        maxBufferLength: 30,
+                        maxMaxBufferLength: 600
+                    });
+                    hls.loadSource(`/hls/{{ file_path }}/master.m3u8`);
+                    hls.attachMedia(player.tech_.el_);
+                    
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        player.play().catch(e => console.warn('自动播放失败:', e));
+                    });
+                    
+                    // 注册清理函数
+                    player.on('dispose', function() {
+                        hls.destroy();
+                    });
+                    
+                    return true;
+                }
+                // 检查是否支持原生HLS
+                else if (player.tech_.el_.canPlayType('application/vnd.apple.mpegurl')) {
+                    return true;
+                }
+                
+                return false;
+            }
+        },
+        {
+            name: "标准流播放",
+            condition: () => true, // 总是可用
+            setup: () => {
+                console.log("使用标准流播放...");
+                player.src({
+                    src: `/stream/{{ file_path }}`,
+                    type: "{{ content_type }}"
+                });
+                return true;
+            }
+        },
+        {
+            name: "转码兼容模式",
+            condition: () => true, // 作为最后的回退选项
+            setup: () => {
+                console.log("使用转码兼容模式...");
+                showAdvancedLoadingMessage('正在准备兼容版本，可能需要等待...');
+                player.src({
+                    src: `/transcode/{{ file_path }}?format=mp4&codec=h264`,
+                    type: "video/mp4"
+                });
+                return true;
+            }
+        }
+    ];
+    
+    // 设置递进式尝试机制
+    let currentStrategyIndex = 0;
+    
+    function tryNextStrategy() {
+        if (currentStrategyIndex >= strategies.length) {
+            console.error("所有播放策略均已尝试，建议使用外部播放器");
+            showNetworkError("此视频无法在浏览器中播放，请使用外部播放器");
+            document.getElementById('externalPlayerBtn').style.animation = 'pulse 1.5s infinite';
+            return;
+        }
+        
+        const strategy = strategies[currentStrategyIndex];
+        console.log(`尝试播放策略 ${currentStrategyIndex + 1}/${strategies.length}: ${strategy.name}`);
+        
+        if (strategy.condition()) {
+            const result = strategy.setup();
+            if (result) {
+                console.log(`策略 ${strategy.name} 设置成功`);
+                
+                // 监控播放是否真正开始
+                setTimeout(() => {
+                    if (player && player.readyState() === 0 && !player.error()) {
+                        console.log(`策略 ${strategy.name} 设置后5秒内未开始播放，尝试下一个策略`);
+                        currentStrategyIndex++;
+                        tryNextStrategy();
+                    }
+                }, 5000);
+            } else {
+                console.log(`策略 ${strategy.name} 设置失败，尝试下一个`);
+                currentStrategyIndex++;
+                tryNextStrategy();
+            }
+        } else {
+            console.log(`策略 ${strategy.name} 不适用于当前环境，跳过`);
+            currentStrategyIndex++;
+            tryNextStrategy();
+        }
+    }
+    
+    // 监听视频播放错误
+    player.on('error', function() {
+        console.error(`播放错误: ${player.error().message}`);
+        currentStrategyIndex++;
+        tryNextStrategy();
+    });
+    
+    // 开始尝试第一个策略
+    tryNextStrategy();
+}
+
+function setupAdvancedPlayback() {
+    // 播放器事件绑定
+    player.on('loadstart', function() {
+        console.log('开始加载媒体');
+        showBufferingIndicator();
+    });
+    
+    player.on('loadedmetadata', function() {
+        console.log('元数据已加载');
+        hideBufferingIndicator();
+        
+        // 启用智能预缓冲
+        setupIntelligentBuffering();
+    });
+    
+    player.on('waiting', function() {
+        console.log('缓冲中');
+        showBufferingIndicator();
+        
+        // 智能缓冲策略
+        if (isLargeFile()) {
+            optimizeBuffering();
+        }
+    });
+    
+    player.on('playing', function() {
+        console.log('正在播放');
+        hideBufferingIndicator();
+    });
+    
+    player.on('error', function(e) {
+        console.error('播放器错误:', player.error());
+        
+        // 显示友好的错误消息
+        showNetworkError(`播放错误: ${getErrorDescription(player.error().code)}`);
+        
+        // 尝试使用备用播放方案
+        if (!player.recovering) {
+            player.recovering = true;
+            setTimeout(() => {
+                initFallbackPlayer();
+                player.recovering = false;
+            }, 3000);
+        }
+    });
+    
+    // 播放器键盘快捷键
+    setupKeyboardControls();
+    
+    // 网络质量监控
+    setupNetworkMonitoring();
+    
+    // 移动设备优化
+    if (isMobileDevice()) {
+        setupMobileOptimization();
+    }
+}
+
+// 设置智能缓冲
+function setupIntelligentBuffering() {
+    if (!player) return;
+    
+    // 获取视频元素
+    const videoElement = player.el().querySelector('video');
+    if (!videoElement) return;
+    
+    // 根据网络条件动态调整预加载策略
+    function adjustPreloadStrategy() {
+        // 检测网络类型和带宽
+        if (navigator.connection) {
+            const connection = navigator.connection;
+            
+            // 低带宽网络减少预缓冲
+            if (connection.downlink < 2 || connection.effectiveType === '2g' || connection.effectiveType === '3g') {
+                videoElement.preload = 'metadata';
+                console.log('检测到低速网络，减少预缓冲');
+                showAdvancedLoadingMessage('已为慢速网络优化播放');
+            } else {
+                // 高速网络增加预缓冲
+                videoElement.preload = 'auto';
+                
+                // 预加载视频片段
+                if (videoElement.duration && !videoElement.paused) {
+                    prefetchVideoSegment(videoElement.currentTime + 30);
+                }
+            }
+        }
+    }
+    
+    // 初始调整和定期检查
+    adjustPreloadStrategy();
+    setInterval(adjustPreloadStrategy, 30000);
+}
+
+// 预取视频片段
+function prefetchVideoSegment(targetTime) {
+    if (!player || !targetTime) return;
+    
+    const videoElement = player.el().querySelector('video');
+    if (!videoElement || !videoElement.duration || targetTime >= videoElement.duration) return;
+    
+    // 检查是否已经缓冲了目标时间
+    for (let i = 0; i < videoElement.buffered.length; i++) {
+        if (targetTime >= videoElement.buffered.start(i) && targetTime <= videoElement.buffered.end(i)) {
+            // 已缓冲，无需预取
+            return;
+        }
+    }
+    
+    console.log(`预加载位置: ${targetTime}秒`);
+    
+    // 计算预取范围 (假设每秒约1MB数据)
+    const estimatedBitrate = 1000000; // 1 Mbps
+    const segmentDuration = 10; // 预取10秒
+    const byteStart = Math.floor(targetTime * estimatedBitrate / 8);
+    const byteEnd = Math.floor(byteStart + (segmentDuration * estimatedBitrate / 8));
+    
+    // 使用Range请求预取片段
+    fetch(`/stream/{{ file_path }}`, {
+        headers: {
+            'Range': `bytes=${byteStart}-${byteEnd}`
+        }
+    }).then(response => {
+        if (response.ok) {
+            console.log(`成功预取 ${targetTime}-${targetTime+segmentDuration} 秒的视频片段`);
+        }
+    }).catch(err => {
+        console.warn('预取视频片段失败:', err);
+    });
+}
+    </script>
+</body>
+</html>

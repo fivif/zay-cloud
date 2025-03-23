@@ -1,0 +1,1238 @@
+
+:root {
+    --sidebar-width: 280px;
+    --glass-bg: rgba(255, 255, 255, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --accent-color: #007bff;
+    --text-color: #2c3e50;
+    --light-text: #6c757d;
+}
+
+body { 
+    background-color: #f5f6fa; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    transition: all 0.3s;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    color: var(--text-color);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* 布局容器 */
+.main-container {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* 磨砂玻璃效果 */
+.glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 15px;
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    margin: 15px;
+    border-radius: 15px;
+    height: calc(100vh - 30px);
+    overflow-y: auto;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* 主内容区 */
+.content {
+    margin-left: calc(var(--sidebar-width) + 30px);
+    padding: 15px;
+    flex: 1;
+    margin-top: 15px;
+    margin-right: 15px;
+    margin-bottom: 15px;
+    border-radius: 15px;
+    max-height: calc(100vh - 30px);
+    overflow-y: auto;
+    transition: margin-left 0.3s ease;
+}
+ /* 按钮状态变更样式 */
+#toggleSidebarBtn {
+transition: all 0.3s ease;
+}
+
+#toggleSidebarBtn:hover {
+background-color: rgba(240, 240, 240, 0.9);
+}
+/* 分类标签样式 */
+.category-tab {
+    cursor: pointer;
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    transition: all 0.3s;
+    border-radius: 8px;
+}
+
+.category-tab:hover {
+    background-color: rgba(233, 236, 239, 0.7);
+}
+
+.category-tab.active {
+    background-color: rgba(0, 123, 255, 0.8);
+    color: white;
+}
+
+/* 文件项样式 */
+.file-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    animation: fadeIn 0.3s;
+}
+
+.file-item:hover {
+    transform: translateX(5px);
+    background-color: rgba(248, 249, 250, 0.7);
+}
+
+.folder-item {
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--accent-color);
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 25px;
+    border-radius: 8px;
+    color: white;
+    opacity: 0.95;
+    z-index: 1000;
+    display: none;
+    animation: slideIn 0.3s;
+}
+
+.notification.success {
+    background-color: rgba(40, 167, 69, 0.9);
+}
+
+.notification.error {
+    background-color: rgba(220, 53, 69, 0.9);
+}
+
+/* 按钮样式 */
+.btn {
+    transition: all 0.2s;
+    border-radius: 8px;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* 背景管理按钮 */
+.bg-manager-btn {
+    position: absolute;
+    bottom: 30px;
+    left: 20px;
+    width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--bs-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  z-index: 1030;
+}
+
+.bg-manager-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .bg-manager-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 夜间模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .bg-manager-btn {
+      background-color: rgba(0, 0, 0, 0.4);
+      color: var(--bs-light);
+    }
+  }
+/* 模态窗口样式 */
+.modal-content {
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 动画 */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { top: -50px; opacity: 0; }
+    to { top: 20px; opacity: 0.95; }
+}
+
+/* 背景图片预览缩略图 */
+.bg-thumbnail {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 3px solid transparent;
+}
+
+.bg-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+.bg-thumbnail.active {
+    border-color: var(--accent-color);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(241, 241, 241, 0.5);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(173, 181, 189, 0.7);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(108, 117, 125, 0.8);
+}
+
+/* 映射源管理按钮样式 */
+.mapping-sources-button {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+/* 映射源列表样式 */
+#mappingSourcesList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 系统路径选择提示样式 */
+.path-suggestion {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.path-suggestion:hover {
+    background-color: rgba(240, 248, 255, 0.6);
+}
+
+/* 面包屑导航 */
+.breadcrumb {
+    background-color: transparent;
+    padding: 10px 0;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* 文件卡片 */
+.card {
+    border: none;
+    border-radius: 15px;
+    
+}
+/* 增强磨砂玻璃效果 */
+.glass-effect {
+backdrop-filter: blur(15px); /* 增加模糊半径 */
+-webkit-backdrop-filter: blur(15px);
+background-color: rgba(255, 255, 255, 0.6); /* 增加不透明度 */
+border: 1px solid rgba(255, 255, 255, 0.5);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* 文件项可读性增强 */
+.file-item {
+background-color: rgba(255, 255, 255, 0.85);
+text-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.file-item:hover {
+background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* 文本增强 */
+.card-body {
+background-color: rgba(255, 255, 255, 0.85);
+}
+
+/* 确保深色背景下的文字可读性 */
+.text-enhanced {
+text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+font-weight: 500;
+}
+
+/* 文件列表卡片增强 */
+#fileList {
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 面包屑导航增强 */
+.breadcrumb-item {
+text-shadow: 0 0 1px rgba(255, 255, 255, 0.7);
+font-weight: 500;
+}
+
+/* 按钮文字增强 */
+.btn {
+font-weight: 500;
+}
+
+/* 动态适应背景 - 深色背景时自动调整样式 */
+@media (prefers-color-scheme: dark) {
+.glass-effect {
+    background-color: rgba(40, 40, 40, 0.75);
+    border-color: rgba(80, 80, 80, 0.3);
+}
+
+.sidebar {
+    background-color: rgba(40, 40, 40, 0.8);
+    color: #f0f0f0;
+}
+
+.file-item {
+    background-color: rgba(60, 60, 60, 0.85);
+    color: #f0f0f0;
+    text-shadow: none;
+}
+
+.file-item:hover {
+    background-color: rgba(80, 80, 80, 0.95);
+}
+}
+
+/* 调整侧边栏视觉效果 */
+.sidebar {
+backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+background-color: rgba(255, 255, 255, 0.7);
+}
+
+/* 改进的文件图标样式 */
+.file-icon {
+margin-right: 8px;
+font-size: 1.1em;
+}
+/* 文件列表卡片样式增强 */
+#fileList {
+border: none;
+border-radius: 18px;
+overflow: hidden;
+transition: all 0.3s ease;
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+background-color: rgba(255, 255, 255, 0.25);
+border: 1px solid rgba(255, 255, 255, 0.18);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 卡片内容区域增强 */
+#fileList .card-body {
+padding: 1.5rem;
+background-color: rgba(255, 255, 255, 0.5);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+}
+
+/* 文件项样式优化 */
+.file-item {
+background-color: rgba(255, 255, 255, 0.85);
+border-radius: 12px;
+transition: transform 0.2s, background-color 0.2s;
+margin-bottom: 12px;
+padding: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+border-left: 3px solid transparent;
+}
+
+.file-item:hover {
+background-color: rgba(255, 255, 255, 0.95);
+transform: translateX(5px);
+border-left-color: var(--accent-color);
+}
+
+.folder-item {
+border-left-color: rgba(0, 123, 255, 0.4);
+}
+
+/* 自适应深色背景 */
+@media (prefers-color-scheme: dark) {
+#fileList {
+background-color: rgba(30, 30, 30, 0.5);
+border-color: rgba(70, 70, 70, 0.3);
+}
+
+#fileList .card-body {
+background-color: rgba(40, 40, 40, 0.7);
+}
+
+.file-item {
+background-color: rgba(50, 50, 50, 0.85);
+color: #f0f0f0;
+}
+
+.file-item:hover {
+background-color: rgba(60, 60, 60, 0.95);
+}
+}
+
+/* 深色背景样式适配类 */
+.dark-background #fileList {
+background-color: rgba(20, 20, 20, 0.6);
+border-color: rgba(80, 80, 80, 0.3);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.dark-background .file-item {
+background-color: rgba(40, 40, 40, 0.8);
+color: rgba(255, 255, 255, 0.95);
+text-shadow: none;
+border-left-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-background .file-item:hover {
+background-color: rgba(60, 60, 60, 0.9);
+border-left-color: var(--accent-color);
+}
+/* 卡片视图样式 */
+.card-view-mode .file-item {
+display: inline-block;
+width: 180px;
+height: 220px;
+margin: 10px;
+padding: 15px;
+text-align: center;
+vertical-align: top;
+transition: all 0.3s;
+overflow: hidden;
+position: relative;
+}
+
+.card-view-mode .file-item:hover {
+transform: translateY(-5px);
+box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-view-mode .file-preview {
+width: 100%;
+height: 120px;
+margin-bottom: 10px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+background-color: rgba(240, 240, 240, 0.5);
+}
+
+.card-view-mode .file-preview img {
+max-width: 100%;
+max-height: 100%;
+object-fit: cover;
+border-radius: 6px;
+}
+
+.card-view-mode .file-preview i {
+font-size: 3em;
+color: rgba(0, 0, 0, 0.4);
+}
+
+.card-view-mode .file-name {
+font-size: 0.9em;
+font-weight: 500;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+margin-bottom: 5px;
+}
+
+.card-view-mode .file-info {
+font-size: 0.8em;
+color: #6c757d;
+}
+
+.card-view-mode .file-actions {
+position: absolute;
+bottom: 10px;
+left: 0;
+right: 0;
+display: flex;
+justify-content: center;
+gap: 5px;
+}
+
+.card-view-mode .btn-sm {
+padding: 0.2rem 0.4rem;
+font-size: 0.75rem;
+}
+
+/* 强化视觉效果，确保在不同背景下可见 */
+.card-view-mode .file-item {
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+background-color: rgba(255, 255, 255, 0.7);
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-background .card-view-mode .file-item {
+background-color: rgba(40, 40, 40, 0.7);
+border-color: rgba(60, 60, 60, 0.3);
+}
+
+/* 文件上面栏增强 */
+.breadcrumb {
+padding: 12px 20px;
+background-color: rgba(255, 255, 255, 0.6);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+border-radius: 10px;
+margin-bottom: 15px;
+border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-background .breadcrumb {
+background-color: rgba(40, 40, 40, 0.7);
+border-color: rgba(60, 60, 60, 0.3);
+}
+
+.breadcrumb-item {
+font-weight: 600;
+text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.dark-background .breadcrumb-item {
+color: #f0f0f0;
+text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.breadcrumb-item.active {
+color: var(--accent-color);
+}
+
+/* 视频模态窗口抖音风格样式 */
+#videoPlayerContainer {
+position: relative;
+background-color: #0000009f;
+}
+
+#videoPlayer {
+/* max-height: 70vh; */
+background-color: #000;
+}
+
+.video-nav-hint {
+padding: 10px;
+text-align: center;
+color: rgba(255, 255, 255, 0.7);
+background-color: rgba(0, 0, 0, 0.3);
+transition: all 0.3s ease;
+opacity: 0.6;
+}
+
+.video-nav-hint:hover {
+opacity: 1;
+background-color: rgba(0, 0, 0, 0.5);
+}
+
+.top-hint, .bottom-hint {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+}
+
+#currentVideoInfo {
+background-color: rgba(0, 0, 0, 0.05);
+border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 滚动提示动画 */
+@keyframes bounce {
+0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+40% {transform: translateY(-5px);}
+60% {transform: translateY(-3px);}
+}
+
+.top-hint i {
+animation: bounce 2s infinite;
+}
+
+.bottom-hint i {
+animation: bounce 2s infinite reverse;
+}
+
+/* 确保视频模态框在移动设备上也能全屏展示 */
+@media (max-width: 768px) {
+#videoPlayerModal .modal-dialog {
+margin: 0;
+max-width: 100%;
+height: 100%;
+}
+
+#videoPlayerModal .modal-content {
+height: 100%;
+border-radius: 0;
+}
+
+#videoPlayer {
+max-height: 60vh;
+}
+}
+
+/* TikTok风格视频播放器样式 */
+#videoPlayerModal .modal-dialog {
+margin: 0;
+max-width: 100%;
+height: 100%;
+}
+
+#videoPlayerModal .modal-content {
+height: 100%;
+border: none;
+border-radius: 0;
+position: relative;
+overflow: hidden;
+}
+
+/* 鼠标控制显示容器 */
+.video-controls-container {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: 50;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.3s ease;
+background: linear-gradient(to bottom, 
+        rgba(0,0,0,0.7) 0%, 
+        rgba(0,0,0,0) 15%, 
+        rgba(0,0,0,0) 85%, 
+        rgba(0,0,0,0.7) 100%);
+}
+
+.video-controls-visible .video-controls-container {
+opacity: 1;
+pointer-events: auto;
+}
+
+/* 顶部控制栏 */
+.video-top-controls {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+padding: 15px;
+display: flex;
+align-items: center;
+z-index: 55;
+}
+
+.btn-back {
+background: rgba(0, 0, 0, 0.4);
+color: white;
+border: none;
+width: 40px;
+height: 40px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+margin-right: 15px;
+cursor: pointer;
+}
+
+.video-title {
+color: white;
+margin: 0;
+flex-grow: 1;
+text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.video-actions {
+display: flex;
+gap: 10px;
+}
+
+.btn-action {
+background: rgba(0, 0, 0, 0.4);
+color: white;
+border: none;
+width: 40px;
+height: 40px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.btn-action:hover {
+background: rgba(255, 255, 255, 0.2);
+}
+
+/* 底部控制栏 */
+.video-bottom-controls {
+position: absolute;
+bottom: 0;
+left: 0;
+width: 100%;
+padding: 15px;
+z-index: 55;
+}
+
+.video-progress-container {
+display: flex;
+align-items: center;
+color: white;
+margin-bottom: 10px;
+gap: 10px;
+}
+
+.video-time-current, .video-time-total {
+font-size: 12px;
+min-width: 40px;
+}
+
+.video-progress {
+flex-grow: 1;
+height: 4px;
+background: rgba(255, 255, 255, 0.3);
+border-radius: 2px;
+position: relative;
+cursor: pointer;
+}
+
+.video-progress-bar {
+position: absolute;
+top: 0;
+left: 0;
+height: 100%;
+background: var(--accent-color, #FF4136);
+border-radius: 2px;
+width: 0;
+}
+
+.video-control-buttons {
+display: flex;
+align-items: center;
+gap: 15px;
+}
+
+.btn-control {
+background: transparent;
+color: white;
+border: none;
+width: 40px;
+height: 40px;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.btn-control:hover {
+transform: scale(1.1);
+}
+
+.video-counter {
+margin-left: auto;
+background: rgba(0, 0, 0, 0.5);
+color: white;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.9rem;
+}
+
+
+.slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+.slide-down {
+    animation: slideDown 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+/* 改进滑动动画关键帧 */
+@keyframes slideUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-110%); opacity: 0; }
+}
+
+@keyframes slideDown {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(110%); opacity: 0; }
+}
+
+@keyframes slideInUp {
+    0% { transform: translateY(110%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInDown {
+    0% { transform: translateY(-110%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* 确保全屏模式下视频容器占满空间 */
+.modal-fullscreen .tiktok-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+/* 优化导航提示 */
+.nav-hints {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 200px;
+    color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    pointer-events: none;
+}
+    /* 确保全屏模式下视频容器也能正确显示 */
+    .modal-fullscreen .tiktok-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+.current-slide {
+transform: translateY(0);
+z-index: 3;
+}
+
+.previous-slide {
+transform: translateY(-100%);
+z-index: 2;
+}
+
+.next-slide {
+transform: translateY(100%);
+z-index: 1;
+}
+
+/* 滑动动画类 */
+.slide-up {
+animation: slideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.slide-down {
+animation: slideDown 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes slideUp {
+0% { transform: translateY(0); }
+100% { transform: translateY(-100%); }
+}
+
+@keyframes slideDown {
+0% { transform: translateY(0); }
+100% { transform: translateY(100%); }
+}
+
+.slide-in-up {
+animation: slideInUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.slide-in-down {
+animation: slideInDown 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes slideInUp {
+0% { transform: translateY(100%); }
+100% { transform: translateY(0); }
+}
+
+@keyframes slideInDown {
+0% { transform: translateY(-100%); }
+100% { transform: translateY(0); }
+}
+
+/* 视频容器 - 确保适应不同屏幕尺寸 */
+.tiktok-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* 视频包装器 - 使其能够正确适配视频尺寸 */
+
+.video-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+    width: auto;
+    height: auto;
+    max-width: 95%;
+    max-height: 95%;
+}
+
+/* 视频元素 - 默认适应屏幕保持比例 */
+.tiktok-video {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain; /* 更改为contain以显示完整视频 */
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* 放大状态 - 使用更自然的缩放 */
+.video-zoomed .tiktok-video {
+    transform: scale(1.5);
+    object-fit: contain; /* 确保即使在放大状态也不裁剪视频 */
+    transform-origin: center;
+}
+
+/* 优化滑动动画 */
+.video-slider {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+
+@keyframes slideUp {
+    0% { transform: translateY(0); opacity: 1; }
+    15% { opacity: 0.9; }
+    100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes slideDown {
+    0% { transform: translateY(0); opacity: 1; }
+    15% { opacity: 0.9; }
+    100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes slideInUp {
+    0% { transform: translateY(100%); opacity: 0; }
+    85% { opacity: 0.9; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInDown {
+    0% { transform: translateY(-100%); opacity: 0; }
+    85% { opacity: 0.9; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* 媒体查询 - 确保在不同设备上正确显示 */
+@media (max-aspect-ratio: 1/1) {
+    /* 竖屏设备优化 */
+    .tiktok-video {
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (min-aspect-ratio: 1/1) {
+    /* 横屏设备优化 */
+    .tiktok-video {
+        width: auto;
+        height: 100%;
+    }
+}
+
+/* 导航提示 */
+.nav-hints {
+position: absolute;
+right: 20px;
+top: 50%;
+transform: translateY(-50%);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 200px;
+color: rgba(255, 255, 255, 0.7);
+z-index: 30;
+}
+
+.hint-up, .hint-down {
+display: flex;
+flex-direction: column;
+align-items: center;
+opacity: 0.6;
+transition: all 0.3s;
+}
+
+.hint-up i, .hint-down i {
+font-size: 24px;
+margin: 5px 0;
+}
+
+.hint-up.active, .hint-down.active {
+opacity: 1;
+transform: scale(1.2);
+}
+
+/* 上下滚动提示动画 */
+.hint-up i {
+animation: floatUp 2s infinite;
+}
+
+.hint-down i {
+animation: floatDown 2s infinite;
+}
+
+@keyframes floatUp {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-10px); }
+}
+
+@keyframes floatDown {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(10px); }
+}
+
+/* 放大提示 */
+.zoom-hint {
+position: absolute;
+left: 50%;
+bottom: 80px;
+transform: translateX(-50%);
+background: rgba(0, 0, 0, 0.5);
+color: white;
+padding: 5px 15px;
+border-radius: 20px;
+font-size: 0.9rem;
+opacity: 0;
+transition: opacity 0.5s;
+z-index: 40;
+}
+
+.zoom-hint.show {
+opacity: 0.7;
+}
+
+/* 放大状态 */
+.video-zoomed .tiktok-video {
+object-fit: cover;
+transform-origin: center;
+transition: transform 0.3s ease;
+}
+
+.video-zoomed .video-wrapper {
+overflow: hidden;
+}
+
+/* 自定义视频控制器 - 隐藏原生控件 */
+.tiktok-video::-webkit-media-controls {
+display: none !important;
+}
+
+.tiktok-video::-webkit-media-controls-enclosure {
+display: none !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+.video-top-controls,
+.video-bottom-controls {
+padding: 10px;
+}
+
+.nav-hints {
+gap: 150px;
+}
+
+.video-title {
+font-size: 1rem;
+}
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.4);
+    z-index: 1;
+}
+
+.file-item {
+    transition: all 0.2s ease-in-out;
+}
+
+.file-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.file-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-preview {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 添加点击反馈效果 */
+.file-item .file-preview:active {
+    transform: scale(0.95);
+}
+
+
+.fade-transition {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .fade-transition.show {
+    opacity: 1;
+  }
+
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+  
+  .spinner-container {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+
+@keyframes skeleton-loading {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
+  }
+  
+  .skeleton-item {
+    pointer-events: none;
+  }
+  
+  .skeleton-preview,
+  .skeleton-line,
+  .skeleton-circle,
+  .skeleton-actions {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+  
+  .skeleton-preview {
+    width: 100%;
+    height: 150px;
+    border-radius: 4px;
+  }
+  
+  .skeleton-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+  }
+  
+  .skeleton-actions {
+    width: 120px;
+    height: 32px;
+    border-radius: 4px;
+  }
+
+  

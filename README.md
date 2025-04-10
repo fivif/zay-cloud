@@ -5,7 +5,7 @@ ZAY-Cloud 是一个强大的本地云媒体服务器，让您可以轻松管理�
 **在本地会有打包的exe，也上传了Docker**
 **- 注意：暂时没有添加登录验证**
 
-![ZAY-Cloud 云媒体服务器](https://zay.rtmd.me/dl/9d601047-9e8e-4194-b5df-de04049f77c8)
+![ZAY-Cloud 云媒体服务器](http://zay.rtmd.me/dl/16493eec-c77a-4c77-b2f9-f9e2e08950d9)
 
 ## ✨ 主要特性
 

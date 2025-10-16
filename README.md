@@ -1,4 +1,4 @@
-<img width="2534" height="1260" alt="image" src="https://github.com/user-attachments/assets/b57cbfec-83ca-4b4f-95e4-e50f73c2d5fa" /># ZAY-Cloud 云媒体服务器
+# ZAY-Cloud 云媒体服务器
 
 ZAY-Cloud 是一个强大的本地云媒体服务器，让您可以轻松管理和访问您的文件、媒体和文档。它提供了直观的Web界面，支持多种文件类型的预览和播放，以及WebDAV网络访问功能。
 

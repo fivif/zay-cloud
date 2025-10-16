@@ -1,11 +1,11 @@
-# ZAY-Cloud 云媒体服务器
+<img width="2534" height="1260" alt="image" src="https://github.com/user-attachments/assets/b57cbfec-83ca-4b4f-95e4-e50f73c2d5fa" /># ZAY-Cloud 云媒体服务器
 
 ZAY-Cloud 是一个强大的本地云媒体服务器，让您可以轻松管理和访问您的文件、媒体和文档。它提供了直观的Web界面，支持多种文件类型的预览和播放，以及WebDAV网络访问功能。
 
 **在本地会有打包的exe，也上传了Docker**
 **- 注意：暂时没有添加登录验证**
 
-![ZAY-Cloud 云媒体服务器](http://zay.rtmd.me/dl/3099eeeb-6e6b-46b5-8d8f-52f459e18202)
+![ZAY-Cloud 云媒体服务器](http://zay.204625.xyz/dl/2a925d9d-1c7c-4024-ae41-b28686d3d7c3)
 
 ## ✨ 主要特性
 
@@ -111,7 +111,7 @@ zay-cloud/
 - 使用"WebDAV客户端"连接其他WebDAV服务
 
 ## 📸 截图
-![t](http://zay.rtmd.me/dl/270a9514-2204-4386-95e8-5b15ca77cfa2)
+<img width="2541" height="1243" alt="image" src="https://github.com/user-attachments/assets/a83312b4-5bb1-4abb-a1c8-16b8c3dd68ea" />
 
 
 
